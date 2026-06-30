@@ -1,0 +1,24 @@
+import type { SVGProps } from "react";
+
+export const MainLogo = ({
+  className,
+  title = "LR & Klatovy Discovery",
+  ...props
+}: SVGProps<SVGSVGElement> & { title?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 6.49 2.45"
+    className={className}
+    role="img"
+    aria-label={title}
+    {...props}
+  >
+    <title>{title}</title>
+    <path
+      fill="#115638"
+      fillRule="evenodd"
+      transform="translate(-4.69 -4.83)"
+      d="M11.18,6.8a1.6,1.6,0,0,1-.44-.29,5,5,0,0,0-1.27-.82v.08C9.48,6.09,9.7,7,9.13,7c-.4,0-1.05-.9-1.27-1.21-.07-.09-.26-.44-.35-.42-.44.14-1,1.55-1.51,1.51-.23,0-.34-.25-.4-.47L5.09,7s-.37.38-.4.28v0h0s.58-.88.65-1,.25-.42.43-.3.13.42.23.52a.57.57,0,0,0,.11-.11c.36-.47.92-1.92,1.72-1.47.37.21.79,1.1,1.2,1.5,0-.31-.09-.91.15-1.07.43-.3,1.41.74,1.67,1a1.62,1.62,0,0,1,.31.43ZM6,6.51H6Zm3,.06H9Z"
+    />
+  </svg>
+);

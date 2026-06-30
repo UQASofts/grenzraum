@@ -1,0 +1,6 @@
+{
+  "name": "LR & Klatovy Discovery Guide",
+  "description": "Discover gorgeous hiking trails, waterfalls, glacial lakes, and primeval forests across the Czech-German border in the Šumava and Bavarian Forest regions. Collect digital stamps and sync them to the BayernCloud registry.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
