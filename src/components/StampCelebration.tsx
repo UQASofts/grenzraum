@@ -4,6 +4,7 @@ import { Sparkles } from "lucide-react";
 
 interface StampCelebrationProps {
   active: boolean;
+  celebrationKey?: number;
   message?: string;
   subMessage?: string;
 }
@@ -49,10 +50,11 @@ function buildConfetti(count: number): ConfettiPiece[] {
 
 export default function StampCelebration({
   active,
+  celebrationKey = 0,
   message = "Stamp Collected!",
   subMessage = "Another adventure logged on your pass.",
 }: StampCelebrationProps) {
-  const pieces = useMemo(() => buildConfetti(56), [active]);
+  const pieces = useMemo(() => buildConfetti(56), [celebrationKey]);
 
   if (!active) return null;
 
@@ -63,7 +65,7 @@ export default function StampCelebration({
     >
       {pieces.map((piece) => (
         <motion.span
-          key={`${active}-${piece.id}`}
+          key={`${celebrationKey}-${piece.id}`}
           className="absolute bottom-0 block rounded-[1px] shadow-sm"
           style={{
             left: `${piece.left}%`,

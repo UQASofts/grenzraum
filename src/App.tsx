@@ -157,6 +157,12 @@ export default function App() {
   // Mobile Menu State
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showStampCelebration, setShowStampCelebration] = useState(false);
+  const [celebrationKey, setCelebrationKey] = useState(0);
+  const [celebrationMeta, setCelebrationMeta] = useState<{
+    message: string;
+    subMessage: string;
+  } | null>(null);
+  const celebrationTimerRef = useRef<number | null>(null);
 
   // Active Selected POI details resolver
   const activePoi = useMemo(() => {
@@ -172,17 +178,13 @@ export default function App() {
     }
   }, [selectedPoiId, activePoi]);
 
-  // Testing: play celebration whenever Stamp Pass is opened (swap to collection-only later)
   useEffect(() => {
-    if (currentView !== "stamps" || !loggedInUser) {
-      setShowStampCelebration(false);
-      return;
-    }
-
-    setShowStampCelebration(true);
-    const timer = window.setTimeout(() => setShowStampCelebration(false), 3800);
-    return () => window.clearTimeout(timer);
-  }, [currentView, loggedInUser]);
+    return () => {
+      if (celebrationTimerRef.current !== null) {
+        window.clearTimeout(celebrationTimerRef.current);
+      }
+    };
+  }, []);
 
   // Persist saved POIs in local storage
   useEffect(() => {
@@ -435,6 +437,30 @@ export default function App() {
     setIsLoginModalOpen(true);
   }, []);
 
+  const triggerStampCelebration = useCallback(
+    (targetPoi: POI) => {
+      if (celebrationTimerRef.current !== null) {
+        window.clearTimeout(celebrationTimerRef.current);
+      }
+
+      setCelebrationMeta({
+        message: language === "en" ? "Stamp Collected!" : "Razítko získáno!",
+        subMessage:
+          language === "en"
+            ? `You unlocked "${targetPoi.stampName}" at ${targetPoi.name}.`
+            : `Odemkli jste "${targetPoi.stampName}" u lokality ${targetPoi.czName}.`,
+      });
+      setCelebrationKey((key) => key + 1);
+      setShowStampCelebration(true);
+
+      celebrationTimerRef.current = window.setTimeout(() => {
+        setShowStampCelebration(false);
+        celebrationTimerRef.current = null;
+      }, 3800);
+    },
+    [language]
+  );
+
   const applyStampCollection = useCallback(
     (
       collectPoiId: string,
@@ -463,7 +489,7 @@ export default function App() {
   );
 
   const collectStamp = useCallback(
-    (collectPoiId: string, options?: { showAlert?: boolean; navigateToPass?: boolean }) => {
+    (collectPoiId: string, options?: { navigateToPass?: boolean }) => {
       if (!loggedInUser) return false;
 
       const { wasNew, targetPoi } = applyStampCollection(
@@ -476,17 +502,13 @@ export default function App() {
         navigate(ROUTES.stamps, { replace: true });
       }
 
-      if (wasNew && options?.showAlert !== false) {
-        alert(
-          language === "en"
-            ? `🎉 Congratulations! You collected the "${targetPoi.stampName}" stamp for ${targetPoi.name}!`
-            : `🎉 Gratulujeme! Získali jste razítko "${targetPoi.stampName}" pro lokalitu ${targetPoi.czName}!`
-        );
+      if (wasNew) {
+        triggerStampCelebration(targetPoi);
       }
 
       return wasNew;
     },
-    [applyStampCollection, loggedInUser, language, navigate]
+    [applyStampCollection, loggedInUser, navigate, triggerStampCelebration]
   );
 
   const handleRequireLoginForStamp = useCallback(
@@ -599,11 +621,7 @@ export default function App() {
     navigate(ROUTES.stamps, { replace: true });
 
     if (wasNew && targetPoi) {
-      alert(
-        language === "en"
-          ? `🎉 Congratulations! You collected the "${targetPoi.stampName}" stamp for ${targetPoi.name}!`
-          : `🎉 Gratulujeme! Získali jste razítko "${targetPoi.stampName}" pro lokalitu ${targetPoi.czName}!`
-      );
+      triggerStampCelebration(targetPoi);
     }
   }, [
     search,
@@ -612,7 +630,7 @@ export default function App() {
     openLoginModal,
     applyStampCollection,
     navigate,
-    language,
+    triggerStampCelebration,
   ]);
 
   // Handle reset of stamp pass
@@ -724,11 +742,7 @@ export default function App() {
       navigate(ROUTES.stamps, { replace: true });
 
       if (wasNew && targetPoi) {
-        alert(
-          language === "en"
-            ? `🎉 Congratulations! You collected the "${targetPoi.stampName}" stamp for ${targetPoi.name}!`
-            : `🎉 Gratulujeme! Získali jste razítko "${targetPoi.stampName}" pro lokalitu ${targetPoi.czName}!`
-        );
+        triggerStampCelebration(targetPoi);
       }
       return;
     }
@@ -1922,13 +1936,13 @@ export default function App() {
 
       <StampCelebration
         active={showStampCelebration}
-        message={
-          language === "en" ? "Stamp Collected!" : "Razítko získáno!"
-        }
+        celebrationKey={celebrationKey}
+        message={celebrationMeta?.message ?? (language === "en" ? "Stamp Collected!" : "Razítko získáno!")}
         subMessage={
-          language === "en"
+          celebrationMeta?.subMessage ??
+          (language === "en"
             ? "Another adventure logged on your explorer pass."
-            : "Další dobrodružství zapsáno do vašeho pasu."
+            : "Další dobrodružství zapsáno do vašeho pasu.")
         }
       />
 
