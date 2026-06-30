@@ -21,6 +21,7 @@ import {
   persistPendingCollect,
   consumePendingCollect,
 } from "./utils/stampStorage";
+import { playStampCelebrationSound } from "./utils/stampCelebrationSound";
 import {
   MapPin,
   Compass,
@@ -452,10 +453,14 @@ export default function App() {
       });
       setCelebrationKey((key) => key + 1);
       setShowStampCelebration(true);
+      playStampCelebrationSound(language);
 
       celebrationTimerRef.current = window.setTimeout(() => {
         setShowStampCelebration(false);
         celebrationTimerRef.current = null;
+        if ("speechSynthesis" in window) {
+          window.speechSynthesis.cancel();
+        }
       }, 3800);
     },
     [language]
