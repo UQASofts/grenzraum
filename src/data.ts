@@ -108,7 +108,7 @@ export const INITIAL_POIS: POI[] = [
     category: "Waterfalls",
     description: "The only natural waterfall in the Šumava National Park, where the Bílý potok creek drops 14 meters down a rugged, rocky mountain ravine. An elegant wooden observation deck hovers directly over the cascading water, surrounded by pristine old-growth mountain forest.",
     czDescription: "Jediný přirozený vodopád v Národním parku Šumava, kde Bílý potok padá 14 metrů dolů drsnou skalnatou horskou roklí. Elegantní dřevěná vyhlídková plošina se tyčí přímo nad kaskádovitou vodou, obklopena nedotčeným starým horským lesem.",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCc1Gv8z2c39Yzo5I_oxOdN7exXv30262puSobPRgh0lgW3wnKyB_6AtXEWpjlZSuLrGB4xnNjeAY89dZz67beh1AfkmUlaESvtUZ0t2vYl4lSBhCgkUUq9YOiMvaq_L6wz2HE37waV7MsOodXc20spM2AfTs4G8awQkFn-vXBZ-e30ca2mDSGoD2cnGJrCH_NZRc50AL4YphIsVWFqGvN629VIj4xKEUNEr8tOOtbZClqapzaD0sMh7pCdDmBvgxJurPCP56zBeJX",
+    image: "https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?auto=format&fit=crop&w=1200&q=80",
     elevationGain: "190 m",
     estTime: "1h 45m",
     distance: "4.2 km",
