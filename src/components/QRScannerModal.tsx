@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { X, QrCode, Sparkles, CheckCircle, AlertCircle, Camera } from "lucide-react";
+import { Html5Qrcode } from "html5-qrcode";
 import { parseCollectPoiIdFromScan } from "../utils/stampQr";
 import { AppLanguage, tr } from "../i18n/language";
+import { loadHikerSession } from "../utils/hikerSession";
+
+const READER_ELEMENT_ID = "stamp-qr-reader";
 
 interface QRScannerModalProps {
   isOpen: boolean;
@@ -9,6 +13,8 @@ interface QRScannerModalProps {
   poiName: string;
   language: AppLanguage;
   isLoggedIn: boolean;
+  preferredCameraId?: string;
+  preflightPermissionDenied?: boolean;
   onStampScanned: (poiId: string) => void;
   onRequireLogin: (poiId: string) => void;
 }
@@ -21,32 +27,34 @@ export default function QRScannerModal({
   poiName,
   language,
   isLoggedIn,
+  preferredCameraId,
+  preflightPermissionDenied = false,
   onStampScanned,
   onRequireLogin,
 }: QRScannerModalProps) {
   const txt = (en: string, de: string, cs: string) => tr(language, en, de, cs);
-
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const rafRef = useRef<number | null>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannedRef = useRef(false);
 
   const [phase, setPhase] = useState<ScannerPhase>("scanning");
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
-  const [supportsCamera, setSupportsCamera] = useState(true);
+  const [isStarting, setIsStarting] = useState(false);
+  const [scanAttempt, setScanAttempt] = useState(0);
 
-  const stopCamera = useCallback(() => {
-    if (rafRef.current !== null) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
+  const stopScanner = useCallback(async () => {
+    const scanner = scannerRef.current;
+    scannerRef.current = null;
+    if (!scanner) return;
+    try {
+      await scanner.stop();
+    } catch {
+      /* not running */
     }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
+    try {
+      scanner.clear();
+    } catch {
+      /* already cleared */
     }
   }, []);
 
@@ -68,9 +76,10 @@ export default function QRScannerModal({
       }
 
       scannedRef.current = true;
-      stopCamera();
+      void stopScanner();
 
-      if (!isLoggedIn) {
+      const hasSession = isLoggedIn || !!loadHikerSession();
+      if (!hasSession) {
         onRequireLogin(poiId);
         onClose();
         return;
@@ -82,16 +91,28 @@ export default function QRScannerModal({
         onClose();
       }, 1400);
     },
-    [isLoggedIn, language, onClose, onRequireLogin, onStampScanned, stopCamera]
+    [isLoggedIn, onClose, onRequireLogin, onStampScanned, stopScanner, language]
   );
 
   useEffect(() => {
     if (!isOpen) {
-      stopCamera();
       scannedRef.current = false;
       setPhase("scanning");
       setCameraError(null);
       setScanError(null);
+      setIsStarting(false);
+      void stopScanner();
+      return;
+    }
+
+    if (preflightPermissionDenied) {
+      setCameraError(
+        txt(
+          "Camera access was denied. In Settings → Safari → Camera, allow access for this site, then try again.",
+          "Kamerazugriff verweigert. Erlauben Sie die Kamera unter Einstellungen → Safari → Kamera.",
+          "Přístup ke kameře byl odepřen. Povolte kameru v Nastavení → Safari → Kamera."
+        )
+      );
       return;
     }
 
@@ -104,105 +125,82 @@ export default function QRScannerModal({
 
     const startScanner = async () => {
       if (!navigator.mediaDevices?.getUserMedia) {
-        setSupportsCamera(false);
         setCameraError(
           txt(
-            "Camera access is not available in this browser. Use your phone camera to scan the sign QR code — it will open this website automatically.",
-            "Kamerazugriff ist in diesem Browser nicht verfügbar. Scannen Sie den QR-Code mit der Handy-Kamera.",
-            "Přístup ke kameře není v tomto prohlížeči k dispozici. Naskenujte QR kód fotoaparátem telefonu — otevře se tato webová stránka."
+            "Camera access is not available in this browser. Scan the printed QR code with your iPhone Camera app instead — the link will open here and collect your stamp.",
+            "Kamerazugriff nicht verfügbar. Scannen Sie den gedruckten QR-Code mit der iPhone-Kamera.",
+            "Přístup ke kameře není k dispozici. Naskenujte vytištěný QR kód fotoaparátem iPhonu."
           )
         );
         return;
       }
 
+      setIsStarting(true);
+
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: { ideal: "environment" },
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
+        await stopScanner();
+        if (cancelled) return;
+
+        const scanner = new Html5Qrcode(READER_ELEMENT_ID, false);
+        scannerRef.current = scanner;
+
+        const cameraConfig = preferredCameraId ?? { facingMode: "environment" };
+
+        await scanner.start(
+          cameraConfig,
+          {
+            fps: 10,
+            qrbox: (viewfinderWidth, viewfinderHeight) => {
+              const edge = Math.min(viewfinderWidth, viewfinderHeight);
+              const size = Math.floor(edge * 0.72);
+              return { width: size, height: size };
+            },
+            disableFlip: false,
           },
-          audio: false,
-        });
-
-        if (cancelled) {
-          stream.getTracks().forEach((track) => track.stop());
-          return;
-        }
-
-        streamRef.current = stream;
-        const video = videoRef.current;
-        if (!video) return;
-
-        video.srcObject = stream;
-        await video.play();
-
-        const BarcodeDetectorCtor = (
-          window as Window & {
-            BarcodeDetector?: new (options?: { formats: string[] }) => {
-              detect: (source: ImageBitmapSource) => Promise<Array<{ rawValue: string }>>;
-            };
+          (decodedText) => {
+            if (!cancelled && !scannedRef.current) {
+              handleDecoded(decodedText);
+            }
+          },
+          () => {
+            /* per-frame decode miss — expected while scanning */
           }
-        ).BarcodeDetector;
-
-        if (!BarcodeDetectorCtor) {
-          setSupportsCamera(false);
+        );
+      } catch {
+        if (!cancelled) {
           setCameraError(
             txt(
-              "Built-in scanning needs a newer mobile browser. Point your phone camera at the sign QR code instead — the link will open here and collect your stamp after sign-in.",
-              "Integriertes Scannen benötigt einen neueren mobilen Browser. Nutzen Sie stattdessen die Handy-Kamera.",
-              "Vestavěné skenování vyžaduje novější mobilní prohlížeč. Namiřte fotoaparát telefonu na QR kód na tabuli — odkaz se otevře zde a razítko se přidá po přihlášení."
+              "Could not start the camera. Allow camera access in Safari Settings, or scan the sign QR with your iPhone Camera app.",
+              "Kamera konnte nicht gestartet werden. Erlauben Sie den Kamerazugriff in den Safari-Einstellungen oder nutzen Sie die iPhone-Kamera.",
+              "Kameru se nepodařilo spustit. Povolte přístup ke kameře v nastavení Safari, nebo použijte fotoaparát iPhonu."
             )
           );
-          stopCamera();
-          return;
         }
-
-        const detector = new BarcodeDetectorCtor({ formats: ["qr_code"] });
-
-        const tick = async () => {
-          if (cancelled || scannedRef.current || !videoRef.current || video.readyState < 2) {
-            if (!cancelled && !scannedRef.current) {
-              rafRef.current = requestAnimationFrame(tick);
-            }
-            return;
-          }
-
-          try {
-            const codes = await detector.detect(video);
-            if (codes.length > 0 && codes[0].rawValue) {
-              handleDecoded(codes[0].rawValue);
-              return;
-            }
-          } catch {
-            /* keep scanning */
-          }
-
-          if (!cancelled && !scannedRef.current) {
-            rafRef.current = requestAnimationFrame(tick);
-          }
-        };
-
-        rafRef.current = requestAnimationFrame(tick);
-      } catch {
-        setSupportsCamera(false);
-        setCameraError(
-          txt(
-            "Could not access the camera. Allow camera permission, or scan the sign with your phone camera app instead.",
-            "Kamera konnte nicht gestartet werden. Erlauben Sie den Kamerazugriff oder scannen Sie mit der Handy-Kamera.",
-            "Kameru se nepodařilo spustit. Povolte přístup ke kameře, nebo naskenujte QR kód fotoaparátem telefonu."
-          )
-        );
+      } finally {
+        if (!cancelled) {
+          setIsStarting(false);
+        }
       }
     };
 
-    startScanner();
+    const frame = requestAnimationFrame(() => {
+      void startScanner();
+    });
 
     return () => {
       cancelled = true;
-      stopCamera();
+      cancelAnimationFrame(frame);
+      void stopScanner();
     };
-  }, [isOpen, language, handleDecoded, stopCamera]);
+  }, [
+    isOpen,
+    scanAttempt,
+    handleDecoded,
+    stopScanner,
+    language,
+    preferredCameraId,
+    preflightPermissionDenied,
+  ]);
 
   if (!isOpen) return null;
 
@@ -255,6 +253,7 @@ export default function QRScannerModal({
                     scannedRef.current = false;
                     setPhase("scanning");
                     setScanError(null);
+                    setScanAttempt((n) => n + 1);
                   }}
                   className="rounded-xl bg-white px-4 py-2 text-xs font-bold text-slate-800"
                 >
@@ -268,39 +267,34 @@ export default function QRScannerModal({
               </div>
             ) : (
               <>
-                <video
-                  ref={videoRef}
-                  className="absolute inset-0 h-full w-full object-cover"
-                  playsInline
-                  muted
+                <div
+                  id={READER_ELEMENT_ID}
+                  className="stamp-qr-reader h-full w-full min-h-[16rem]"
                 />
-                <div className="pointer-events-none absolute inset-0 bg-black/20" />
-                <div className="absolute left-6 top-6 h-8 w-8 border-l-2 border-t-2 border-emerald-400" />
-                <div className="absolute right-6 top-6 h-8 w-8 border-r-2 border-t-2 border-emerald-400" />
-                <div className="absolute bottom-6 left-6 h-8 w-8 border-b-2 border-l-2 border-emerald-400" />
-                <div className="absolute bottom-6 right-6 h-8 w-8 border-b-2 border-r-2 border-emerald-400" />
-                <div className="absolute left-6 right-6 top-1/2 h-0.5 -translate-y-1/2 bg-emerald-400/50 animate-pulse" />
+                {isStarting && (
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/50 text-xs font-semibold text-white">
+                    {txt("Starting camera…", "Kamera wird gestartet…", "Spouštím kameru…")}
+                  </div>
+                )}
               </>
             )}
           </div>
 
           <p className="mt-5 max-w-sm px-2 text-center text-xs font-light leading-relaxed text-slate-500">
             {txt(
-              "Point your camera at the QR code on the information board. After scanning, you will be asked to sign in if needed, then the stamp is saved to your pass.",
-              "Richten Sie die Kamera auf den QR-Code an der Informationstafel. Nach dem Scan ggf. anmelden – dann wird der Stempel gespeichert.",
-              "Namiřte kameru na QR kód na informační tabuli. Po naskenování se v případě potřeby přihlásíte a razítko se uloží do vašeho pasu."
+              "Point your camera at the QR code on the information board. If you are already signed in, the stamp is saved automatically.",
+              "Richten Sie die Kamera auf den QR-Code an der Tafel. Wenn Sie angemeldet sind, wird der Stempel automatisch gespeichert.",
+              "Namiřte kameru na QR kód na tabuli. Pokud jste přihlášeni, razítko se uloží automaticky."
             )}
           </p>
 
-          {!supportsCamera && (
-            <p className="mt-3 max-w-sm rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-center text-[11px] text-amber-800">
-              {txt(
-                "Tip: iPhone/Android camera apps open the stamp link directly from the printed QR code.",
-                "Tipp: iPhone/Android-Kamera öffnet den Stempel-Link direkt vom gedruckten QR-Code.",
-                "Tip: Fotoaparát v iPhonu nebo Androidu otevře odkaz na razítko přímo z vytištěného QR kódu."
-              )}
-            </p>
-          )}
+          <p className="mt-3 max-w-sm rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-center text-[11px] text-amber-800">
+            {txt(
+              "Tip: You can also scan the printed QR with your iPhone Camera app — it opens this site in Safari and collects the stamp.",
+              "Tipp: Sie können den QR-Code auch mit der iPhone-Kamera scannen — Safari öffnet sich und speichert den Stempel.",
+              "Tip: QR kód můžete naskenovat i fotoaparátem iPhonu — otevře se Safari a razítko se uloží."
+            )}
+          </p>
         </div>
       </div>
     </div>

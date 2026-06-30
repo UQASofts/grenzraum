@@ -29,3 +29,15 @@
   background: rgba(100, 116, 139, 0.65);
 }
 
+/* html5-qrcode reader — iOS Safari needs explicit video sizing */
+.stamp-qr-reader video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+.stamp-qr-reader > div {
+  width: 100% !important;
+  height: 100% !important;
+}
+

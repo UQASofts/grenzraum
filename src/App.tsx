@@ -35,7 +35,10 @@ import {
   loadHikerSession,
   saveHikerSession,
   clearHikerSession,
+  resolveHikerUser,
+  isHikerLoggedIn,
 } from "./utils/hikerSession";
+import { preflightQrCamera } from "./utils/qrCamera";
 import {
   MapPin,
   Compass,
@@ -132,6 +135,8 @@ export default function App() {
 
   // Modals state
   const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [scannerCameraId, setScannerCameraId] = useState<string | undefined>();
+  const [scannerPermissionDenied, setScannerPermissionDenied] = useState(false);
   const processedCollectRef = useRef<string | null>(null);
   const [activeGalleryImage, setActiveGalleryImage] = useState<string | null>(null);
   const [savedPoiIds, setSavedPoiIds] = useState<string[]>(() => {
@@ -173,14 +178,21 @@ export default function App() {
     return pois.find((p) => p.id === selectedPoiId) || null;
   }, [pois, selectedPoiId]);
 
+  const restoreSessionFromStorage = useCallback(() => {
+    const user = loadHikerSession();
+    if (user) {
+      saveHikerSession(user);
+      setLoggedInUser(user);
+      setUserStamps(loadUserStamps(user.email));
+      return user;
+    }
+    return null;
+  }, []);
+
   // Re-sync login + stamps from localStorage when switching tabs (iOS QR opens new tab)
   useEffect(() => {
     const syncFromStorage = () => {
-      const user = loadHikerSession();
-      if (user) {
-        setLoggedInUser(user);
-        setUserStamps(loadUserStamps(user.email));
-      }
+      restoreSessionFromStorage();
     };
 
     const onVisibility = () => {
@@ -189,16 +201,19 @@ export default function App() {
       }
     };
 
+    restoreSessionFromStorage();
     window.addEventListener("focus", syncFromStorage);
     window.addEventListener("storage", syncFromStorage);
+    window.addEventListener("pageshow", syncFromStorage);
     document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
       window.removeEventListener("focus", syncFromStorage);
       window.removeEventListener("storage", syncFromStorage);
+      window.removeEventListener("pageshow", syncFromStorage);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, []);
+  }, [restoreSessionFromStorage]);
 
   // Sync active gallery image when active POI changes
   useEffect(() => {
@@ -541,11 +556,17 @@ export default function App() {
 
   const collectStamp = useCallback(
     (collectPoiId: string, options?: { navigateToPass?: boolean }) => {
-      if (!loggedInUser) return false;
+      const sessionUser = resolveHikerUser(loggedInUser);
+      if (!sessionUser) return false;
+
+      if (!loggedInUser) {
+        setLoggedInUser(sessionUser);
+        setUserStamps(loadUserStamps(sessionUser.email));
+      }
 
       const { wasNew, targetPoi } = applyStampCollection(
         collectPoiId,
-        loggedInUser.email
+        sessionUser.email
       );
       if (!targetPoi) return false;
 
@@ -569,17 +590,36 @@ export default function App() {
     [openLoginModal]
   );
 
+  const handleOpenScanner = useCallback(async () => {
+    setScannerPermissionDenied(false);
+    setScannerCameraId(undefined);
+
+    const preflight = await preflightQrCamera();
+    setScannerPermissionDenied(preflight.permissionDenied);
+    setScannerCameraId(preflight.cameraId);
+    setIsScannerOpen(true);
+  }, []);
+
+  const handleCloseScanner = useCallback(() => {
+    setIsScannerOpen(false);
+    setScannerCameraId(undefined);
+    setScannerPermissionDenied(false);
+  }, []);
+
   const handleStampScanned = useCallback(
     (poiId: string) => {
-      if (!loggedInUser) {
+      if (!isHikerLoggedIn(loggedInUser)) {
         handleRequireLoginForStamp(poiId);
         setIsScannerOpen(false);
         return;
       }
+      if (!loggedInUser) {
+        restoreSessionFromStorage();
+      }
       collectStamp(poiId);
       setIsScannerOpen(false);
     },
-    [loggedInUser, collectStamp, handleRequireLoginForStamp]
+    [loggedInUser, collectStamp, handleRequireLoginForStamp, restoreSessionFromStorage]
   );
 
   const openRegisterModal = useCallback(() => {
@@ -593,23 +633,35 @@ export default function App() {
   }, []);
 
   const handleGoStamps = useCallback(() => {
-    if (!loggedInUser) {
+    if (!isHikerLoggedIn(loggedInUser)) {
       openLoginModal({ returnPath: ROUTES.stamps });
       return;
     }
+    if (!loggedInUser) {
+      restoreSessionFromStorage();
+    }
     goStamps();
-  }, [loggedInUser, goStamps, openLoginModal]);
+  }, [loggedInUser, goStamps, openLoginModal, restoreSessionFromStorage]);
 
   // Stamp Pass requires sign-in — show login popup instead of navigating away
   useEffect(() => {
-    if (currentView === "stamps" && !loggedInUser) {
-      const params = new URLSearchParams(window.location.search);
-      const returnPath = params.toString()
-        ? `${ROUTES.stamps}?${params.toString()}`
-        : ROUTES.stamps;
-      openLoginModal({ returnPath });
-      navigate(ROUTES.home, { replace: true });
+    if (currentView !== "stamps") return;
+
+    const sessionUser = resolveHikerUser(loggedInUser);
+    if (sessionUser) {
+      if (!loggedInUser) {
+        setLoggedInUser(sessionUser);
+        setUserStamps(loadUserStamps(sessionUser.email));
+      }
+      return;
     }
+
+    const params = new URLSearchParams(window.location.search);
+    const returnPath = params.toString()
+      ? `${ROUTES.stamps}?${params.toString()}`
+      : ROUTES.stamps;
+    openLoginModal({ returnPath });
+    navigate(ROUTES.home, { replace: true });
   }, [currentView, loggedInUser, navigate, openLoginModal]);
 
   // Legacy /login URL opens the modal on the current site
@@ -650,7 +702,16 @@ export default function App() {
       return;
     }
 
-    if (!loggedInUser) {
+    const sessionUser = resolveHikerUser(loggedInUser);
+    if (sessionUser && !loggedInUser) {
+      setLoggedInUser(sessionUser);
+      setUserStamps(loadUserStamps(sessionUser.email));
+    }
+
+    const persistedUser = loadHikerSession();
+    const activeUser = sessionUser ?? persistedUser;
+
+    if (!activeUser) {
       persistPendingCollect(collectPoiId);
       openLoginModal({ returnPath: stampCollectPath(collectPoiId) });
       return;
@@ -658,7 +719,7 @@ export default function App() {
 
     if (!pois.some((p) => p.id === collectPoiId)) return;
 
-    const dedupeKey = `${collectPoiId}:${loggedInUser.email}`;
+    const dedupeKey = `${collectPoiId}:${activeUser.email}`;
     if (processedCollectRef.current === dedupeKey) return;
 
     processedCollectRef.current = dedupeKey;
@@ -666,7 +727,7 @@ export default function App() {
 
     const { wasNew, targetPoi } = applyStampCollection(
       collectPoiId,
-      loggedInUser.email
+      activeUser.email
     );
 
     navigate(ROUTES.stamps, { replace: true });
@@ -1570,7 +1631,8 @@ export default function App() {
                           )}
                         </p>
                         <button
-                          onClick={() => setIsScannerOpen(true)}
+                          type="button"
+                          onClick={() => void handleOpenScanner()}
                           className="mt-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs uppercase tracking-wider px-5 py-2.5 rounded-xl transition-all cursor-pointer inline-flex items-center gap-2 shadow-sm"
                         >
                           <Compass className="w-4 h-4 text-white" />
@@ -1613,7 +1675,8 @@ export default function App() {
                       {/* Main action buttons */}
                       <div className="space-y-2.5">
                         <button
-                          onClick={() => setIsScannerOpen(true)}
+                          type="button"
+                          onClick={() => void handleOpenScanner()}
                           className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs uppercase tracking-wider py-3.5 px-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
                         >
                           <Award className="w-4 h-4 text-white" />
@@ -2005,10 +2068,12 @@ export default function App() {
       {/* ALL MODALS PRELOADED AND WIRED TO CORRESPONDING ACTIONS */}
       <QRScannerModal
         isOpen={isScannerOpen}
-        onClose={() => setIsScannerOpen(false)}
+        onClose={handleCloseScanner}
         poiName={activePoi ? getPoiName(activePoi, language) : ""}
         language={language}
-        isLoggedIn={!!loggedInUser}
+        isLoggedIn={isHikerLoggedIn(loggedInUser)}
+        preferredCameraId={scannerCameraId}
+        preflightPermissionDenied={scannerPermissionDenied}
         onStampScanned={handleStampScanned}
         onRequireLogin={handleRequireLoginForStamp}
       />

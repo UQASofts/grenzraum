@@ -1,7 +1,13 @@
 /** Public app URL encoded in destination QR codes for digital stamp collection. */
 export function getStampCollectUrl(poiId: string, origin?: string): string {
+  const configuredOrigin =
+    typeof import.meta !== "undefined"
+      ? import.meta.env.VITE_SITE_URL?.replace(/\/$/, "")
+      : undefined;
   const base =
-    origin ?? (typeof window !== "undefined" ? window.location.origin : "");
+    origin ??
+    configuredOrigin ??
+    (typeof window !== "undefined" ? window.location.origin : "");
   return `${base}/?collect=${encodeURIComponent(poiId)}`;
 }
 
