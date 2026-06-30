@@ -2,8 +2,10 @@ export interface POI {
   id: string;
   name: string;
   czName: string;
+  deName?: string;
   description: string;
   czDescription: string;
+  deDescription?: string;
   category: "Waterfalls" | "Museums" | "Lakes" | "Hiking" | "Secret Tips";
   image: string;
   elevationGain: string;

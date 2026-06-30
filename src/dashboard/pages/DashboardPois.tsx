@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useDashboardLanguage } from "../../context/DashboardLanguageContext";
+import { dashboardUi } from "../../i18n/dashboard";
 import { Plus, Edit2, Trash2, MapPin, Users, Award, Wifi, QrCode } from "lucide-react";
 import { useData } from "../../context/DataContext";
 import { POI } from "../../types";
@@ -6,39 +8,40 @@ import CreatePoiModal from "../../components/CreatePoiModal";
 import PoiQrCodeModal from "../../components/PoiQrCodeModal";
 
 export default function DashboardPois() {
+  const { language } = useDashboardLanguage();
   const { pois, savePoi, deletePoi } = useData();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingPoi, setEditingPoi] = useState<POI | null>(null);
   const [qrPoi, setQrPoi] = useState<POI | null>(null);
 
   const handleDelete = (id: string) => {
-    if (confirm("Delete this point of interest?")) {
+    if (confirm(dashboardUi.deletePoiConfirm(language))) {
       deletePoi(id);
     }
   };
 
   const stats = [
     {
-      label: "Total Regional POIs",
+      label: dashboardUi.totalPois(language),
       value: pois.length.toString(),
       icon: MapPin,
       color: "text-emerald-600 bg-emerald-50",
     },
     {
-      label: "Registered Pass Holders",
+      label: dashboardUi.passHolders(language),
       value: "3,812",
       icon: Users,
       color: "text-blue-600 bg-blue-50",
     },
     {
-      label: "Ledger Stamps Issued",
+      label: dashboardUi.stampsIssued(language),
       value: "14,290",
       icon: Award,
       color: "text-amber-600 bg-amber-50",
     },
     {
-      label: "Synchronized Nodes",
-      value: "100% ONLINE",
+      label: dashboardUi.syncNodes(language),
+      value: dashboardUi.online(language),
       icon: Wifi,
       color: "text-emerald-600 bg-emerald-50",
       highlight: true,
@@ -73,10 +76,8 @@ export default function DashboardPois() {
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-4 flex flex-col justify-between gap-4 border-b border-slate-200 pb-4 sm:flex-row sm:items-center">
           <div>
-            <h2 className="font-bold text-slate-900">Point of Interest Directory</h2>
-            <p className="text-xs text-slate-500">
-              Manage destinations synced across the Šumava–Bayern region.
-            </p>
+            <h2 className="font-bold text-slate-900">{dashboardUi.poiDirectory(language)}</h2>
+            <p className="text-xs text-slate-500">{dashboardUi.poiDirectoryDesc(language)}</p>
           </div>
           <button
             type="button"
@@ -87,7 +88,7 @@ export default function DashboardPois() {
             className="flex items-center justify-center gap-1.5 self-start rounded-lg bg-emerald-600 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-emerald-500 sm:self-auto"
           >
             <Plus className="h-4 w-4" />
-            Add Destination
+            {dashboardUi.addPoi(language)}
           </button>
         </div>
 
@@ -128,7 +129,7 @@ export default function DashboardPois() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex gap-1">
-                      {(poi.languages || ["en", "cs"]).map((l) => (
+                      {(poi.languages || ["en", "de", "cs"]).map((l) => (
                         <span
                           key={l}
                           className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] uppercase text-slate-500"
@@ -213,7 +214,7 @@ export default function DashboardPois() {
           setEditingPoi(null);
         }}
         editingPoi={editingPoi}
-        language="en"
+        language={language}
       />
     </div>
   );

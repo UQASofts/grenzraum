@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Map, useMap, useMapsLibrary } from "@vis.gl/react-google-maps";
 import { POI } from "../types";
+import { AppLanguage, tr } from "../i18n/language";
 import { getGoogleMapId } from "../config/googleMaps";
 
 interface DirectionsLayerProps {
@@ -86,7 +87,7 @@ function DirectionsLayer({
 interface NavigationMapProps {
   poi: POI;
   origin: google.maps.LatLngLiteral | null;
-  language: "en" | "cs";
+  language: AppLanguage;
   geoLoading: boolean;
   geoError: string | null;
 }
@@ -98,6 +99,7 @@ export default function NavigationMap({
   geoLoading,
   geoError,
 }: NavigationMapProps) {
+  const txt = (en: string, de: string, cs: string) => tr(language, en, de, cs);
   const [mapType, setMapType] = useState<"standard" | "satellite" | "terrain">("standard");
   const [routeInfo, setRouteInfo] = useState<{ distance: string; duration: string } | null>(null);
   const [routeError, setRouteError] = useState<string | null>(null);
@@ -111,12 +113,14 @@ export default function NavigationMap({
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm">
           <div className="rounded-xl border border-slate-200 bg-white px-6 py-4 text-center shadow-lg">
             <p className="text-sm font-semibold text-slate-900">
-              {language === "en" ? "Locating you…" : "Zjišťuji polohu…"}
+              {txt("Locating you…", "Standort wird ermittelt…", "Zjišťuji polohu…")}
             </p>
             <p className="mt-1 text-xs text-slate-400">
-              {language === "en"
-                ? "Allow location access to plot your route."
-                : "Povolte přístup k poloze pro vykreslení trasy."}
+              {txt(
+                "Allow location access to plot your route.",
+                "Standortzugriff erlauben, um die Route zu zeichnen.",
+                "Povolte přístup k poloze pro vykreslení trasy."
+              )}
             </p>
           </div>
         </div>
@@ -128,7 +132,7 @@ export default function NavigationMap({
         </div>
       )}
 
-      {routeInfo && (
+      {/* {routeInfo && (
         <div className="absolute left-4 top-4 z-40 rounded-xl border border-slate-200 bg-white/95 px-4 py-2 shadow-md">
           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
             {language === "en" ? "Walking route" : "Pěší trasa"}
@@ -139,7 +143,7 @@ export default function NavigationMap({
             {routeInfo.distance}
           </p>
         </div>
-      )}
+      )} */}
 
       <Map
         defaultCenter={mapCenter}

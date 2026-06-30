@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { X, QrCode, Sparkles, CheckCircle, AlertCircle, Camera } from "lucide-react";
 import { parseCollectPoiIdFromScan } from "../utils/stampQr";
+import { AppLanguage, tr } from "../i18n/language";
 
 interface QRScannerModalProps {
   isOpen: boolean;
   onClose: () => void;
   poiName: string;
-  language: "en" | "cs";
+  language: AppLanguage;
   isLoggedIn: boolean;
   onStampScanned: (poiId: string) => void;
   onRequireLogin: (poiId: string) => void;
@@ -23,6 +24,8 @@ export default function QRScannerModal({
   onStampScanned,
   onRequireLogin,
 }: QRScannerModalProps) {
+  const txt = (en: string, de: string, cs: string) => tr(language, en, de, cs);
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number | null>(null);
@@ -54,9 +57,11 @@ export default function QRScannerModal({
       const poiId = parseCollectPoiIdFromScan(text);
       if (!poiId) {
         setScanError(
-          language === "en"
-            ? "This QR code is not a valid stamp check-in code."
-            : "Tento QR kód není platný kód pro získání razítka."
+          txt(
+            "This QR code is not a valid stamp check-in code.",
+            "Dieser QR-Code ist kein gültiger Stempel-Check-in-Code.",
+            "Tento QR kód není platný kód pro získání razítka."
+          )
         );
         setPhase("error");
         return;
@@ -101,9 +106,11 @@ export default function QRScannerModal({
       if (!navigator.mediaDevices?.getUserMedia) {
         setSupportsCamera(false);
         setCameraError(
-          language === "en"
-            ? "Camera access is not available in this browser. Use your phone camera to scan the sign QR code — it will open this website automatically."
-            : "Přístup ke kameře není v tomto prohlížeči k dispozici. Naskenujte QR kód fotoaparátem telefonu — otevře se tato webová stránka."
+          txt(
+            "Camera access is not available in this browser. Use your phone camera to scan the sign QR code — it will open this website automatically.",
+            "Kamerazugriff ist in diesem Browser nicht verfügbar. Scannen Sie den QR-Code mit der Handy-Kamera.",
+            "Přístup ke kameře není v tomto prohlížeči k dispozici. Naskenujte QR kód fotoaparátem telefonu — otevře se tato webová stránka."
+          )
         );
         return;
       }
@@ -141,9 +148,11 @@ export default function QRScannerModal({
         if (!BarcodeDetectorCtor) {
           setSupportsCamera(false);
           setCameraError(
-            language === "en"
-              ? "Built-in scanning needs a newer mobile browser. Point your phone camera at the sign QR code instead — the link will open here and collect your stamp after sign-in."
-              : "Vestavěné skenování vyžaduje novější mobilní prohlížeč. Namiřte fotoaparát telefonu na QR kód na tabuli — odkaz se otevře zde a razítko se přidá po přihlášení."
+            txt(
+              "Built-in scanning needs a newer mobile browser. Point your phone camera at the sign QR code instead — the link will open here and collect your stamp after sign-in.",
+              "Integriertes Scannen benötigt einen neueren mobilen Browser. Nutzen Sie stattdessen die Handy-Kamera.",
+              "Vestavěné skenování vyžaduje novější mobilní prohlížeč. Namiřte fotoaparát telefonu na QR kód na tabuli — odkaz se otevře zde a razítko se přidá po přihlášení."
+            )
           );
           stopCamera();
           return;
@@ -178,9 +187,11 @@ export default function QRScannerModal({
       } catch {
         setSupportsCamera(false);
         setCameraError(
-          language === "en"
-            ? "Could not access the camera. Allow camera permission, or scan the sign with your phone camera app instead."
-            : "Kameru se nepodařilo spustit. Povolte přístup ke kameře, nebo naskenujte QR kód fotoaparátem telefonu."
+          txt(
+            "Could not access the camera. Allow camera permission, or scan the sign with your phone camera app instead.",
+            "Kamera konnte nicht gestartet werden. Erlauben Sie den Kamerazugriff oder scannen Sie mit der Handy-Kamera.",
+            "Kameru se nepodařilo spustit. Povolte přístup ke kameře, nebo naskenujte QR kód fotoaparátem telefonu."
+          )
         );
       }
     };
@@ -202,7 +213,7 @@ export default function QRScannerModal({
           <div className="flex items-center gap-2">
             <QrCode className="h-5 w-5 animate-pulse text-emerald-600" />
             <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900">
-              {language === "en" ? "Scan Stamp QR Code" : "Skenovat QR razítko"}
+              {txt("Scan Stamp QR Code", "Stempel-QR-Code scannen", "Skenovat QR razítko")}
             </h3>
           </div>
           <button
@@ -218,7 +229,7 @@ export default function QRScannerModal({
         <div className="flex flex-col items-center p-6">
           <div className="mb-4 text-center">
             <span className="mb-1 block font-mono text-[10px] uppercase tracking-widest text-emerald-600">
-              {language === "en" ? "At the destination" : "V místě cíle"}
+              {txt("At the destination", "Am Zielort", "V místě cíle")}
             </span>
             <span className="text-lg font-extrabold text-slate-900">{poiName}</span>
           </div>
@@ -231,7 +242,7 @@ export default function QRScannerModal({
                 </div>
                 <div className="mt-1 flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-emerald-600">
                   <Sparkles className="h-3.5 w-3.5" />
-                  {language === "en" ? "Stamp collected!" : "Razítko získáno!"}
+                  {txt("Stamp collected!", "Stempel gesammelt!", "Razítko získáno!")}
                 </div>
               </div>
             ) : phase === "error" ? (
@@ -247,7 +258,7 @@ export default function QRScannerModal({
                   }}
                   className="rounded-xl bg-white px-4 py-2 text-xs font-bold text-slate-800"
                 >
-                  {language === "en" ? "Try again" : "Zkusit znovu"}
+                  {txt("Try again", "Erneut versuchen", "Zkusit znovu")}
                 </button>
               </div>
             ) : cameraError ? (
@@ -274,16 +285,20 @@ export default function QRScannerModal({
           </div>
 
           <p className="mt-5 max-w-sm px-2 text-center text-xs font-light leading-relaxed text-slate-500">
-            {language === "en"
-              ? "Point your camera at the QR code on the information board. After scanning, you will be asked to sign in if needed, then the stamp is saved to your pass."
-              : "Namiřte kameru na QR kód na informační tabuli. Po naskenování se v případě potřeby přihlásíte a razítko se uloží do vašeho pasu."}
+            {txt(
+              "Point your camera at the QR code on the information board. After scanning, you will be asked to sign in if needed, then the stamp is saved to your pass.",
+              "Richten Sie die Kamera auf den QR-Code an der Informationstafel. Nach dem Scan ggf. anmelden – dann wird der Stempel gespeichert.",
+              "Namiřte kameru na QR kód na informační tabuli. Po naskenování se v případě potřeby přihlásíte a razítko se uloží do vašeho pasu."
+            )}
           </p>
 
           {!supportsCamera && (
             <p className="mt-3 max-w-sm rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-center text-[11px] text-amber-800">
-              {language === "en"
-                ? "Tip: iPhone/Android camera apps open the stamp link directly from the printed QR code."
-                : "Tip: Fotoaparát v iPhonu nebo Androidu otevře odkaz na razítko přímo z vytištěného QR kódu."}
+              {txt(
+                "Tip: iPhone/Android camera apps open the stamp link directly from the printed QR code.",
+                "Tipp: iPhone/Android-Kamera öffnet den Stempel-Link direkt vom gedruckten QR-Code.",
+                "Tip: Fotoaparát v iPhonu nebo Androidu otevře odkaz na razítko přímo z vytištěného QR kódu."
+              )}
             </p>
           )}
         </div>

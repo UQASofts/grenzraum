@@ -1,5 +1,3 @@
-type CelebrationLanguage = "en" | "cs";
-
 let sharedAudioContext: AudioContext | null = null;
 
 function getAudioContext(): AudioContext | null {
@@ -68,50 +66,8 @@ function playCelebrationFanfare(ctx: AudioContext) {
   });
 }
 
-function pickVoice(language: CelebrationLanguage): SpeechSynthesisVoice | undefined {
-  const voices = window.speechSynthesis.getVoices();
-  const langPrefix = language === "cs" ? "cs" : "en";
-
-  return (
-    voices.find((voice) => voice.lang.toLowerCase().startsWith(langPrefix) && voice.localService) ||
-    voices.find((voice) => voice.lang.toLowerCase().startsWith(langPrefix)) ||
-    voices.find((voice) => voice.lang.toLowerCase().startsWith("en"))
-  );
-}
-
-function speakCelebration(language: CelebrationLanguage) {
-  if (!("speechSynthesis" in window)) return;
-
-  const phrase =
-    language === "en" ? "Stamp collected! Great job, explorer." : "Razítko získáno! Výborná práce, objeviteli.";
-
-  const speak = () => {
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(phrase);
-    utterance.rate = 1.02;
-    utterance.pitch = 1.08;
-    utterance.volume = 0.95;
-
-    const voice = pickVoice(language);
-    if (voice) utterance.voice = voice;
-
-    window.speechSynthesis.speak(utterance);
-  };
-
-  const voices = window.speechSynthesis.getVoices();
-  if (voices.length === 0) {
-    window.speechSynthesis.onvoiceschanged = () => {
-      window.speechSynthesis.onvoiceschanged = null;
-      speak();
-    };
-    return;
-  }
-
-  speak();
-}
-
-/** Achievement fanfare + short spoken celebration when a stamp is collected. */
-export function playStampCelebrationSound(language: CelebrationLanguage = "en") {
+/** Short achievement fanfare when a stamp is collected. */
+export function playStampCelebrationSound() {
   try {
     const ctx = getAudioContext();
     if (ctx) {
@@ -120,6 +76,4 @@ export function playStampCelebrationSound(language: CelebrationLanguage = "en") 
   } catch {
     /* audio blocked or unsupported */
   }
-
-  window.setTimeout(() => speakCelebration(language), 520);
 }

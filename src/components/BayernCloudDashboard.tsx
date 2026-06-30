@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { RefreshCw, CheckCircle, Database, HardDrive, Wifi } from "lucide-react";
 import { ApiLog } from "../types";
+import { AppLanguage } from "../i18n/language";
 
 interface BayernCloudDashboardProps {
   apiLogs: ApiLog[];
   onTriggerSync: () => void;
-  language: "en" | "cs";
+  language: AppLanguage;
 }
 
 export default function BayernCloudDashboard({

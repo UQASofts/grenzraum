@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Compass, X } from "lucide-react";
 import { MainLogo } from "./icons";
+import { AppLanguage, tr } from "../i18n/language";
 
 interface RegisterModalProps {
   isOpen: boolean;
   onClose: () => void;
-  language: "en" | "cs";
+  language: AppLanguage;
   onOpenLogin: () => void;
 }
 
@@ -15,6 +16,7 @@ export default function RegisterModal({
   language,
   onOpenLogin,
 }: RegisterModalProps) {
+  const txt = (en: string, de: string, cs: string) => tr(language, en, de, cs);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -39,18 +41,12 @@ export default function RegisterModal({
     setError("");
 
     if (password.length < 6) {
-      setError(
-        language === "en"
-          ? "Password must be at least 6 characters."
-          : "Heslo musí mít alespoň 6 znaků."
-      );
+      setError(txt("Password must be at least 6 characters.", "Passwort muss mindestens 6 Zeichen haben.", "Heslo musí mít alespoň 6 znaků."));
       return;
     }
 
     if (password !== confirmPassword) {
-      setError(
-        language === "en" ? "Passwords do not match." : "Hesla se neshodují."
-      );
+      setError(txt("Passwords do not match.", "Passwörter stimmen nicht überein.", "Hesla se neshodují."));
       return;
     }
 
@@ -81,12 +77,14 @@ export default function RegisterModal({
               <div className="space-y-1.5 text-center">
                 <Compass className="mx-auto h-8 w-8 text-emerald-600" />
                 <h2 className="font-display text-xl font-bold uppercase tracking-wider text-slate-900">
-                  {language === "en" ? "Welcome, Adventurer!" : "Vítejte, dobrodruhu!"}
+                  {txt("Welcome, Adventurer!", "Willkommen, Abenteurer!", "Vítejte, dobrodruhu!")}
                 </h2>
                 <p className="text-xs text-slate-400">
-                  {language === "en"
-                    ? `Your account for ${email} has been created. Sign in to start collecting stamps.`
-                    : `Váš účet pro ${email} byl vytvořen. Přihlaste se a začněte sbírat razítka.`}
+                  {txt(
+                    `Your account for ${email} has been created. Sign in to start collecting stamps.`,
+                    `Ihr Konto für ${email} wurde erstellt. Melden Sie sich an, um Stempel zu sammeln.`,
+                    `Váš účet pro ${email} byl vytvořen. Přihlaste se a začněte sbírat razítka.`
+                  )}
                 </p>
               </div>
               <button
@@ -97,7 +95,7 @@ export default function RegisterModal({
                 }}
                 className="w-full rounded-xl bg-emerald-600 py-3.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-emerald-500"
               >
-                {language === "en" ? "Sign In Now" : "Přihlásit se"}
+                {txt("Sign In Now", "Jetzt anmelden", "Přihlásit se")}
               </button>
             </>
           ) : (
@@ -105,12 +103,14 @@ export default function RegisterModal({
               <div className="space-y-1.5 text-center">
                 <MainLogo className="mx-auto h-8 w-8" />
                 <h2 className="font-display text-xl font-bold uppercase tracking-wider text-slate-900">
-                  {language === "en" ? "Create Your Account" : "Vytvořit účet"}
+                  {txt("Create Your Account", "Konto erstellen", "Vytvořit účet")}
                 </h2>
                 <p className="text-xs font-light text-slate-400">
-                  {language === "en"
-                    ? "Join the cross-border adventure and start your digital stamp collection."
-                    : "Připojte se k přeshraničnímu dobrodružství a začněte sbírat digitální razítka."}
+                  {txt(
+                    "Join the cross-border adventure and start your digital stamp collection.",
+                    "Starten Sie Ihr grenzüberschreitendes Abenteuer und sammeln Sie digitale Stempel.",
+                    "Připojte se k přeshraničnímu dobrodružství a začněte sbírat digitální razítka."
+                  )}
                 </p>
               </div>
 
@@ -123,21 +123,21 @@ export default function RegisterModal({
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    {language === "en" ? "Full Name" : "Celé jméno"}
+                    {txt("Full Name", "Vollständiger Name", "Celé jméno")}
                   </label>
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
-                    placeholder={language === "en" ? "e.g. Lukas Müller" : "např. Lukas Müller"}
+                    placeholder={txt("e.g. Lukas Müller", "z. B. Lukas Müller", "např. Lukas Müller")}
                     className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-800 outline-none focus:border-emerald-500"
                   />
                 </div>
 
                 <div>
                   <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    {language === "en" ? "Email Address" : "E-mailová adresa"}
+                    {txt("Email Address", "E-Mail-Adresse", "E-mailová adresa")}
                   </label>
                   <input
                     type="email"
@@ -151,7 +151,7 @@ export default function RegisterModal({
 
                 <div>
                   <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    {language === "en" ? "Password" : "Heslo"}
+                    {txt("Password", "Passwort", "Heslo")}
                   </label>
                   <input
                     type="password"
@@ -166,7 +166,7 @@ export default function RegisterModal({
 
                 <div>
                   <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    {language === "en" ? "Confirm Password" : "Potvrzení hesla"}
+                    {txt("Confirm Password", "Passwort bestätigen", "Potvrzení hesla")}
                   </label>
                   <input
                     type="password"
@@ -182,12 +182,12 @@ export default function RegisterModal({
                   type="submit"
                   className="w-full rounded-xl bg-emerald-600 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-emerald-600/20 transition-all hover:bg-emerald-500"
                 >
-                  {language === "en" ? "Create Account" : "Vytvořit účet"}
+                  {txt("Create Account", "Konto erstellen", "Vytvořit účet")}
                 </button>
               </form>
 
               <p className="text-center text-[11px] text-slate-500">
-                {language === "en" ? "Already have an account? " : "Již máte účet? "}
+                {txt("Already have an account? ", "Bereits ein Konto? ", "Již máte účet? ")}
                 <button
                   type="button"
                   onClick={() => {
@@ -197,7 +197,7 @@ export default function RegisterModal({
                   }}
                   className="font-semibold text-emerald-600 hover:underline"
                 >
-                  {language === "en" ? "Sign In" : "Přihlásit se"}
+                  {txt("Sign In", "Anmelden", "Přihlásit se")}
                 </button>
               </p>
             </>

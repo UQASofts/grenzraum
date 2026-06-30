@@ -3,6 +3,8 @@ import {createRoot} from 'react-dom/client';
 import {BrowserRouter, Routes, Route} from 'react-router-dom';
 import {DataProvider} from './context/DataContext';
 import {AdminAuthProvider} from './context/AdminAuthContext';
+import {LanguageProvider} from './context/LanguageContext';
+import {DashboardLanguageProvider} from './context/DashboardLanguageContext';
 import App from './App.tsx';
 import DashboardApp from './dashboard/DashboardApp';
 import DashboardLogin from './dashboard/DashboardLogin';
@@ -14,9 +16,30 @@ createRoot(document.getElementById('root')!).render(
       <DataProvider>
         <AdminAuthProvider>
           <Routes>
-            <Route path="/dashboard/login" element={<DashboardLogin />} />
-            <Route path="/dashboard/*" element={<DashboardApp />} />
-            <Route path="/*" element={<App />} />
+            <Route
+              path="/dashboard/login"
+              element={
+                <DashboardLanguageProvider>
+                  <DashboardLogin />
+                </DashboardLanguageProvider>
+              }
+            />
+            <Route
+              path="/dashboard/*"
+              element={
+                <DashboardLanguageProvider>
+                  <DashboardApp />
+                </DashboardLanguageProvider>
+              }
+            />
+            <Route
+              path="/*"
+              element={
+                <LanguageProvider>
+                  <App />
+                </LanguageProvider>
+              }
+            />
           </Routes>
         </AdminAuthProvider>
       </DataProvider>

@@ -6,6 +6,7 @@ import {
   type MapCameraChangedEvent,
 } from "@vis.gl/react-google-maps";
 import { POI } from "../types";
+import { AppLanguage } from "../i18n/language";
 import { MapPin, Plus, Minus, Navigation } from "lucide-react";
 import MapPoiPopup from "./MapPoiPopup";
 import {
@@ -20,7 +21,7 @@ interface MapComponentProps {
   onSelectPoi: (poi: POI) => void;
   onExplorePoi?: (poi: POI) => void;
   onClosePoi?: () => void;
-  language: "en" | "cs";
+  language: AppLanguage;
 }
 
 const API_KEY = getGoogleMapsApiKey();

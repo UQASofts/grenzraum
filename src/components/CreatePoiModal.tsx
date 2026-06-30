@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { X, Plus, AlertCircle, Save } from "lucide-react";
 import { POI } from "../types";
+import { DashboardLanguage, dtr } from "../i18n/language";
 
 interface CreatePoiModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (poi: POI) => void;
   editingPoi: POI | null;
-  language: "en" | "cs";
+  language: DashboardLanguage;
 }
 
 export default function CreatePoiModal({
@@ -18,6 +19,7 @@ export default function CreatePoiModal({
   language,
 }: CreatePoiModalProps) {
   const [name, setName] = useState("");
+  const [deName, setDeName] = useState("");
   const [czName, setCzName] = useState("");
   const [category, setCategory] = useState<POI["category"]>("Hiking");
   const [difficulty, setDifficulty] = useState<POI["difficulty"]>("Moderate");
@@ -27,6 +29,7 @@ export default function CreatePoiModal({
   const [lat, setLat] = useState("");
   const [lng, setLng] = useState("");
   const [description, setDescription] = useState("");
+  const [deDescription, setDeDescription] = useState("");
   const [czDescription, setCzDescription] = useState("");
   const [image, setImage] = useState("");
   const [stampName, setStampName] = useState("");
@@ -34,6 +37,7 @@ export default function CreatePoiModal({
   useEffect(() => {
     if (editingPoi) {
       setName(editingPoi.name);
+      setDeName(editingPoi.deName || "");
       setCzName(editingPoi.czName);
       setCategory(editingPoi.category);
       setDifficulty(editingPoi.difficulty);
@@ -43,12 +47,14 @@ export default function CreatePoiModal({
       setLat(editingPoi.lat.toString());
       setLng(editingPoi.lng.toString());
       setDescription(editingPoi.description);
+      setDeDescription(editingPoi.deDescription || "");
       setCzDescription(editingPoi.czDescription);
       setImage(editingPoi.image);
       setStampName(editingPoi.stampName);
     } else {
       // Clear fields for new POI
       setName("");
+      setDeName("");
       setCzName("");
       setCategory("Hiking");
       setDifficulty("Moderate");
@@ -58,6 +64,7 @@ export default function CreatePoiModal({
       setLat("49.15");
       setLng("13.20");
       setDescription("");
+      setDeDescription("");
       setCzDescription("");
       setImage("https://lh3.googleusercontent.com/aida-public/AB6AXuCA1sNBaAQujbgJwZoFtMZ2CEShQxh0DLfGpCYqfRySYXRcq6owzqIoYJ6kLW0F0k_EBsBK26_i11fWP2c1KQGbxgmgYaLuNO-NUX2x08B2uYaTaE7mOWNpf5zw3oAekGT9G04yOkaBfSsQk9GB4LZ9ad8oKJjn2BXyzu990BU8Lo7GpZz-6p1KtD2A999ugsSqx5VN3f-qUfhiTufJqe89LeihUJd81de76VlKWl7AAKzymcSGC8HrywXEBZyZ6azL8mbSBEfv1-M0"); // Forest Trail pic
       setStampName("");
@@ -76,6 +83,7 @@ export default function CreatePoiModal({
       id: editingPoi?.id || `poi-${Date.now()}`,
       name,
       czName,
+      deName: deName || undefined,
       category,
       difficulty,
       elevationGain: elevationGain || "0 m",
@@ -84,12 +92,13 @@ export default function CreatePoiModal({
       lat: parseFloat(lat),
       lng: parseFloat(lng),
       description: description || "No English description provided.",
+      deDescription: deDescription || undefined,
       czDescription: czDescription || "Popis nebyl zadán.",
       image: image || "https://lh3.googleusercontent.com/aida-public/AB6AXuCA1sNBaAQujbgJwZoFtMZ2CEShQxh0DLfGpCYqfRySYXRcq6owzqIoYJ6kLW0F0k_EBsBK26_i11fWP2c1KQGbxgmgYaLuNO-NUX2x08B2uYaTaE7mOWNpf5zw3oAekGT9G04yOkaBfSsQk9GB4LZ9ad8oKJjn2BXyzu990BU8Lo7GpZz-6p1KtD2A999ugsSqx5VN3f-qUfhiTufJqe89LeihUJd81de76VlKWl7AAKzymcSGC8HrywXEBZyZ6azL8mbSBEfv1-M0",
       stampName: stampName || `${name} Stamp`,
       stampImage: editingPoi?.stampImage || "https://lh3.googleusercontent.com/aida-public/AB6AXuArGvsjOhpYPv5fw2kq8DGRliU-6BabAUK_Bp9GQIp32q_o5q_hPmYHWUeBA11ewfXSAy7G_HiOnyMh68HfmGdHYhBmtY-GSREV9hOLB6YKcs6Lr-EJh3Fy5veuLR0sSPowDo7m4Mman3rTbFBX4pAI7vDHQxTTHAKETi5W0YQhbrGyW_uoESxGs-XMTT_ZG9EvZLTLNfgHwgA-yYrotfOUN5Js3O6qBXsxqy9qBwMkYIgnnYpPr-DgrtE8V1QoG4ol0EvG9dHnsYUc",
       status: "Pending",
-      languages: editingPoi?.languages || ["en", "cs"],
+      languages: editingPoi?.languages || ["en", "de", "cs"],
       secretTip: category === "Secret Tips",
     };
 
@@ -105,12 +114,8 @@ export default function CreatePoiModal({
         <div className="p-5 border-b border-slate-200 flex items-center justify-between">
           <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider">
             {editingPoi
-              ? language === "en"
-                ? `Edit Point of Interest`
-                : `Upravit turistický cíl`
-              : language === "en"
-              ? `Create New Destination`
-              : `Vytvořit nový cíl`}
+              ? dtr(language, "Edit Point of Interest", "POI bearbeiten")
+              : dtr(language, "Create New Destination", "Neues Ziel erstellen")}
           </h3>
           <button
             onClick={onClose}
@@ -123,7 +128,7 @@ export default function CreatePoiModal({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {/* Section 1: Bilingual Names */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
                 Name (English) <span className="text-rose-500">*</span>
@@ -134,6 +139,18 @@ export default function CreatePoiModal({
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. White Gorge Waterfall"
                 required
+                className="w-full bg-slate-50 border border-slate-200 focus:border-emerald-500 rounded-xl px-4 py-2.5 text-sm text-slate-800 outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                Name (Deutsch)
+              </label>
+              <input
+                type="text"
+                value={deName}
+                onChange={(e) => setDeName(e.target.value)}
+                placeholder="z. B. Wasserfall Weiße Schlucht"
                 className="w-full bg-slate-50 border border-slate-200 focus:border-emerald-500 rounded-xl px-4 py-2.5 text-sm text-slate-800 outline-none"
               />
             </div>
@@ -296,6 +313,18 @@ export default function CreatePoiModal({
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
               placeholder="Write a captivating hiking description in English..."
+              className="w-full bg-slate-50 border border-slate-200 focus:border-emerald-500 rounded-xl p-4 text-sm text-slate-800 outline-none resize-none"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+              Beschreibung (Deutsch)
+            </label>
+            <textarea
+              value={deDescription}
+              onChange={(e) => setDeDescription(e.target.value)}
+              rows={3}
+              placeholder="Beschreibung auf Deutsch..."
               className="w-full bg-slate-50 border border-slate-200 focus:border-emerald-500 rounded-xl p-4 text-sm text-slate-800 outline-none resize-none"
             />
           </div>

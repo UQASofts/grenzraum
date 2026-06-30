@@ -4,7 +4,16 @@ import {
 } from "./data";
 import { POI, UserStamp, Achievement } from "./types";
 import { useData } from "./context/DataContext";
+import { useLanguage } from "./context/LanguageContext";
+import { PublicLanguageSwitcher } from "./components/LanguageSwitcher";
+import {
+  tr as i18nTr,
+  getPoiName,
+  getPoiDescription,
+  getPoiSecondaryName,
+} from "./i18n/language";
 import MapComponent from "./components/MapComponent";
+import PoiPreviewMap from "./components/PoiPreviewMap";
 import QRScannerModal from "./components/QRScannerModal";
 import LoginModal from "./components/LoginModal";
 import RegisterModal from "./components/RegisterModal";
@@ -92,7 +101,8 @@ export default function App() {
     }));
   });
 
-  const [language, setLanguage] = useState<"en" | "cs">("en");
+  const { language, setLanguage } = useLanguage();
+  const txt = (en: string, de: string, cs: string) => i18nTr(language, en, de, cs);
   const {
     view: currentView,
     poiId: selectedPoiId,
@@ -206,29 +216,41 @@ export default function App() {
             
             let logMsg = "";
             if (next === 10) {
-              logMsg = language === "en"
-                ? "🥾 Leaving trailhead. Double-checking hiking gear and map coordinates."
-                : "🥾 Opouštíme výchozí bod. Kontrola výbavy a souřadnic v mapě.";
+              logMsg = txt(
+                "🥾 Leaving trailhead. Double-checking hiking gear and map coordinates.",
+                "🥾 Startpunkt verlassen. Ausrüstung und Kartenkoordinaten prüfen.",
+                "🥾 Opouštíme výchozí bod. Kontrola výbavy a souřadnic v mapě."
+              );
             } else if (next === 30) {
-              logMsg = language === "en"
-                ? `🌲 Steady ascent. Mossy old-growth pines rising on both sides. (${remDist} km remaining)`
-                : `🌲 Stabilní stoupání. Mechem porostlé prastaré borovice po obou stranách. (zbývá ${remDist} km)`;
+              logMsg = txt(
+                `🌲 Steady ascent. Mossy old-growth pines rising on both sides. (${remDist} km remaining)`,
+                `🌲 Gleichmäßiger Aufstieg. Moosige Urwälder links und rechts. (noch ${remDist} km)`,
+                `🌲 Stabilní stoupání. Mechem porostlé prastaré borovice po obou stranách. (zbývá ${remDist} km)`
+              );
             } else if (next === 50) {
-              logMsg = language === "en"
-                ? `💧 Passed a fresh mountain stream. Pristine water is crisp and cold. (${remDist} km remaining)`
-                : `💧 Míjíme průzračný horský potok. Voda je ledově čistá a osvvěžující. (zbývá ${remDist} km)`;
+              logMsg = txt(
+                `💧 Passed a fresh mountain stream. Pristine water is crisp and cold. (${remDist} km remaining)`,
+                `💧 Bergbach passiert. Klares Wasser ist eiskalt. (noch ${remDist} km)`,
+                `💧 Míjíme průzračný horský potok. Voda je ledově čistá a osvvěžující. (zbývá ${remDist} km)`
+              );
             } else if (next === 70) {
-              logMsg = language === "en"
-                ? `⛰️ Elevation rises! Splendid panoramic views of the Šumava mountains opening up. (${remDist} km remaining)`
-                : `⛰️ Nadmořská výška stoupá! Otevírají se nádherné panoramatické výhledy na Šumavu. (zbývá ${remDist} km)`;
+              logMsg = txt(
+                `⛰️ Elevation rises! Splendid panoramic views of the Šumava mountains opening up. (${remDist} km remaining)`,
+                `⛰️ Höhe nimmt zu! Herrliche Šumava-Panoramen. (noch ${remDist} km)`,
+                `⛰️ Nadmořská výška stoupá! Otevírají se nádherné panoramatické výhledy na Šumavu. (zbývá ${remDist} km)`
+              );
             } else if (next === 90) {
-              logMsg = language === "en"
-                ? `🔭 Destination structure is in sight! Final trail section lies ahead. (${remDist} km remaining)`
-                : `🔭 Cíl je na dohled! Před námi je závěrečný úsek cesty. (zbývá ${remDist} km)`;
+              logMsg = txt(
+                `🔭 Destination structure is in sight! Final trail section lies ahead. (${remDist} km remaining)`,
+                `🔭 Ziel in Sicht! Letzter Abschnitt vor uns. (noch ${remDist} km)`,
+                `🔭 Cíl je na dohled! Před námi je závěrečný úsek cesty. (zbývá ${remDist} km)`
+              );
             } else if (next === 100) {
-              logMsg = language === "en"
-                ? "🎉 You have arrived at the coordinates! The area is fully synchronized. Click 'Collect Digital Stamp' to lock it in your pass!"
-                : "🎉 Dorazili jste na souřadnice cíle! Poloha je plně ověřena. Klikněte na 'Získat digitální razítko' pro odemčení!";
+              logMsg = txt(
+                "🎉 You have arrived at the coordinates! The area is fully synchronized. Click 'Collect Digital Stamp' to lock it in your pass!",
+                "🎉 Am Ziel angekommen! Bereich synchronisiert. Klicken Sie auf 'Digitalen Stempel sammeln'!",
+                "🎉 Dorazili jste na souřadnice cíle! Poloha je plně ověřena. Klikněte na 'Získat digitální razítko' pro odemčení!"
+              );
             }
             
             if (logMsg) {
@@ -387,14 +409,16 @@ export default function App() {
   const handleTriggerRealGps = () => {
     if (!navigator.geolocation) {
       alert(
-        language === "en"
-          ? "Geolocation is not supported by your browser."
-          : "Váš prohlížeč nepodporuje určování polohy."
+        txt(
+          "Geolocation is not supported by your browser.",
+          "Geolokalisierung wird von Ihrem Browser nicht unterstützt.",
+          "Váš prohlížeč nepodporuje určování polohy."
+        )
       );
       return;
     }
     setGpsLoading(true);
-    setGpsMsg(language === "en" ? "Requesting device GPS coordinates..." : "Vyžadování GPS souřadnic ze zařízení...");
+    setGpsMsg(txt("Requesting device GPS coordinates...", "GPS-Koordinaten werden angefordert...", "Vyžadování GPS souřadnic ze zařízení..."));
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setUserLocation({
@@ -404,9 +428,11 @@ export default function App() {
         setGpsSource("real");
         setGpsLoading(false);
         setGpsMsg(
-          language === "en"
-            ? `Successfully synchronized live GPS: ${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`
-            : `Poloha úspěšně načtena: ${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`
+          txt(
+            `Successfully synchronized live GPS: ${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`,
+            `Live-GPS synchronisiert: ${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`,
+            `Poloha úspěšně načtena: ${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`
+          )
         );
       },
       (error) => {
@@ -416,9 +442,11 @@ export default function App() {
           errorMsg = "Permission denied. Please ensure browser/iframe location permission is enabled.";
         }
         alert(
-          language === "en"
-            ? `Could not retrieve GPS coordinates: ${errorMsg}`
-            : `Nepodařilo se získat GPS souřadnice: ${errorMsg}`
+          txt(
+            `Could not retrieve GPS coordinates: ${errorMsg}`,
+            `GPS-Koordinaten konnten nicht abgerufen werden: ${errorMsg}`,
+            `Nepodařilo se získat GPS souřadnice: ${errorMsg}`
+          )
         );
       },
       { enableHighAccuracy: true, timeout: 8000 }
@@ -445,22 +473,20 @@ export default function App() {
       }
 
       setCelebrationMeta({
-        message: language === "en" ? "Stamp Collected!" : "Razítko získáno!",
-        subMessage:
-          language === "en"
-            ? `You unlocked "${targetPoi.stampName}" at ${targetPoi.name}.`
-            : `Odemkli jste "${targetPoi.stampName}" u lokality ${targetPoi.czName}.`,
+        message: txt("Stamp Collected!", "Stempel gesammelt!", "Razítko získáno!"),
+        subMessage: txt(
+          `You unlocked "${targetPoi.stampName}" at ${targetPoi.name}.`,
+          `Sie haben "${targetPoi.stampName}" bei ${getPoiName(targetPoi, language)} freigeschaltet.`,
+          `Odemkli jste "${targetPoi.stampName}" u lokality ${targetPoi.czName}.`
+        ),
       });
       setCelebrationKey((key) => key + 1);
       setShowStampCelebration(true);
-      playStampCelebrationSound(language);
+      playStampCelebrationSound();
 
       celebrationTimerRef.current = window.setTimeout(() => {
         setShowStampCelebration(false);
         celebrationTimerRef.current = null;
-        if ("speechSynthesis" in window) {
-          window.speechSynthesis.cancel();
-        }
       }, 3800);
     },
     [language]
@@ -642,9 +668,11 @@ export default function App() {
   const handleResetStampPass = () => {
     if (
       confirm(
-        language === "en"
-          ? "Are you sure you want to reset your stamp pass and achievements? This will lock all stamps so you can start collecting them again."
-          : "Opravdu chcete resetovat svůj průkaz razítek a úspěchy? Tím se uzamknou všechna razítka, abyste je mohli začít sbírat znovu."
+        txt(
+          "Are you sure you want to reset your stamp pass and achievements? This will lock all stamps so you can start collecting them again.",
+          "Stempelpass und Erfolge wirklich zurücksetzen? Alle Stempel werden wieder gesperrt.",
+          "Opravdu chcete resetovat svůj průkaz razítek a úspěchy? Tím se uzamknou všechna razítka, abyste je mohli začít sbírat znovu."
+        )
       )
     ) {
       // Lock all stamps
@@ -671,8 +699,10 @@ export default function App() {
       const matchQuery =
         poi.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         poi.czName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (poi.deName?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
         poi.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        poi.czDescription.toLowerCase().includes(searchQuery.toLowerCase());
+        poi.czDescription.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (poi.deDescription?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
       
       const matchCategory =
         selectedCategory === "All" || poi.category === selectedCategory;
@@ -688,9 +718,11 @@ export default function App() {
     
     if (lockedStamps.length === 0) {
       alert(
-        language === "en"
-          ? "You have already collected all available digital stamps! Incredible job!"
-          : "Již jste získali všechna dostupná digitální razítka! Skvělá práce!"
+        txt(
+          "You have already collected all available digital stamps! Incredible job!",
+          "Sie haben bereits alle digitalen Stempel gesammelt! Großartige Leistung!",
+          "Již jste získali všechna dostupná digitální razítka! Skvělá práce!"
+        )
       );
       return;
     }
@@ -718,15 +750,19 @@ export default function App() {
     setWalkProgress(0);
     setIsWalking(false);
     setWalkLogs([
-      language === "en" 
-        ? `📍 Set course for ${closest.poi.name}. Distance to go: ${closest.dist} km.`
-        : `📍 Nastaven směr na ${closest.poi.czName}. Zbývající vzdálenost: ${closest.dist} km.`
+      txt(
+        `📍 Set course for ${getPoiName(closest.poi, language)}. Distance to go: ${closest.dist} km.`,
+        `📍 Kurs gesetzt auf ${getPoiName(closest.poi, language)}. Noch ${closest.dist} km.`,
+        `📍 Nastaven směr na ${closest.poi.czName}. Zbývající vzdálenost: ${closest.dist} km.`
+      ),
     ]);
 
     alert(
-      language === "en"
-        ? `📍 Found closest locked destination: "${closest.poi.name}" (${closest.dist} km away). Opening trail navigator!`
-        : `📍 Nalezen nejbližší uzamčený cíl: "${closest.poi.czName}" (vzdálenost ${closest.dist} km). Otevírám navigátor!`
+      txt(
+        `📍 Found closest locked destination: "${getPoiName(closest.poi, language)}" (${closest.dist} km away). Opening trail navigator!`,
+        `📍 Nächstes gesperrtes Ziel: "${getPoiName(closest.poi, language)}" (${closest.dist} km). Navigation wird geöffnet!`,
+        `📍 Nalezen nejbližší uzamčený cíl: "${closest.poi.czName}" (vzdálenost ${closest.dist} km). Otevírám navigátor!`
+      )
     );
   };
 
@@ -798,7 +834,7 @@ export default function App() {
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              {language === "en" ? "Home" : "Domů"}
+              {txt("Home", "Startseite", "Domů")}
             </button>
             <button
               onClick={() => goMap()}
@@ -808,7 +844,7 @@ export default function App() {
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              {language === "en" ? "Explorer Map" : "Mapa výletů"}
+              {txt("Explorer Map", "Entdecker-Karte", "Mapa výletů")}
             </button>
             <button
               onClick={handleGoStamps}
@@ -818,7 +854,7 @@ export default function App() {
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              {language === "en" ? "Stamp Pass" : "Pas razítek"}
+              {txt("Stamp Pass", "Stempelpass", "Pas razítek")}
             </button>
 
           </nav>
@@ -826,12 +862,7 @@ export default function App() {
           {/* Action buttons (Language, Auth Profile) */}
           <div className="hidden md:flex items-center gap-3">
             {/* Bilingual toggle */}
-            <button
-              onClick={() => setLanguage((prev) => (prev === "en" ? "cs" : "en"))}
-              className="bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold font-mono px-3 py-1.5 rounded-xl cursor-pointer text-slate-600 hover:text-slate-900 transition-colors"
-            >
-              {language === "en" ? "CZ" : "EN"}
-            </button>
+            <PublicLanguageSwitcher language={language} onChange={setLanguage} />
 
             {loggedInUser ? (
               <div className="flex items-center gap-3 pl-3 border-l border-slate-200">
@@ -854,19 +885,14 @@ export default function App() {
                 onClick={() => openLoginModal()}
                 className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-xl shadow transition-all cursor-pointer"
               >
-                {language === "en" ? "Sign In" : "Přihlásit se"}
+                {txt("Sign In", "Anmelden", "Přihlásit se")}
               </button>
             )}
           </div>
 
           {/* Mobile Menu trigger */}
           <div className="md:hidden flex items-center gap-2">
-            <button
-              onClick={() => setLanguage((prev) => (prev === "en" ? "cs" : "en"))}
-              className="bg-white border border-slate-200 text-xs font-mono px-2 py-1.5 rounded-lg text-slate-600"
-            >
-              {language === "en" ? "CZ" : "EN"}
-            </button>
+            <PublicLanguageSwitcher language={language} onChange={setLanguage} compact />
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="p-2 bg-white border border-slate-200 text-slate-600 hover:text-slate-900 rounded-xl"
@@ -887,7 +913,7 @@ export default function App() {
             }}
             className="w-full text-left py-2 px-3 hover:bg-slate-100 rounded-lg text-sm font-semibold"
           >
-            {language === "en" ? "Home" : "Domů"}
+            {txt("Home", "Startseite", "Domů")}
           </button>
           <button
             onClick={() => {
@@ -896,7 +922,7 @@ export default function App() {
             }}
             className="w-full text-left py-2 px-3 hover:bg-slate-100 rounded-lg text-sm font-semibold"
           >
-            {language === "en" ? "Explorer Map" : "Mapa výletů"}
+            {txt("Explorer Map", "Entdecker-Karte", "Mapa výletů")}
           </button>
           <button
             onClick={() => {
@@ -905,7 +931,7 @@ export default function App() {
             }}
             className="w-full text-left py-2 px-3 hover:bg-slate-100 rounded-lg text-sm font-semibold"
           >
-            {language === "en" ? "Stamp Pass" : "Pas razítek"}
+            {txt("Stamp Pass", "Stempelpass", "Pas razítek")}
           </button>
           <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
             {loggedInUser ? (
@@ -921,7 +947,7 @@ export default function App() {
                   }}
                   className="bg-slate-50 text-rose-400 border border-slate-200 px-3 py-1.5 rounded-xl text-xs font-bold"
                 >
-                  {language === "en" ? "Log Out" : "Odhlásit"}
+                  {txt("Log Out", "Abmelden", "Odhlásit")}
                 </button>
               </div>
             ) : (
@@ -932,7 +958,7 @@ export default function App() {
                 }}
                 className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-xl text-sm font-bold text-center"
               >
-                {language === "en" ? "Sign In" : "Přihlásit se"}
+                {txt("Sign In", "Anmelden", "Přihlásit se")}
               </button>
             )}
           </div>
@@ -952,19 +978,23 @@ export default function App() {
                 alt="Bohemian Forest / Šumava Landscape"
                 className="absolute inset-0 w-full h-full object-cover brightness-40"
               />
-              <div className="relative z-10 space-y-4 max-w-2xl">
-                <span className="bg-emerald-600/30 border border-emerald-400/50 text-emerald-100 text-[10px] font-mono tracking-widest uppercase font-bold px-3 py-1 rounded-full inline-block">
-                  {language === "en" ? "Bavarian Forest & Šumava Adventure" : "Dobrodružství na Šumavě a v Bavorském Lese"}
+              <div className="relative z-10 space-y-3 max-w-2xl">
+                <span className="bg-emerald-600/30 mt-4 md:mt-0 border border-emerald-400/50 text-emerald-100 text-[10px] font-mono tracking-widest uppercase font-bold px-3 py-1 rounded-full inline-block">
+                  {txt("Bavarian Forest & Šumava Adventure", "Bayerischer Wald & Šumava", "Dobrodružství na Šumavě a v Bavorském Lese")}
                 </span>
                 <h1 className="text-3xl md:text-5xl font-display font-extrabold tracking-tight text-white leading-tight">
-                  {language === "en"
-                    ? "Discover Magical Cross-Border Trails"
-                    : "Objevujte kouzelné přeshraniční stezky"}
+                  {txt(
+                    "Discover Magical Cross-Border Trails",
+                    "Entdecken Sie magische Grenzsteige",
+                    "Objevujte kouzelné přeshraniční stezky"
+                  )}
                 </h1>
                 <p className="text-sm md:text-base text-slate-200 leading-relaxed font-light">
-                  {language === "en"
-                    ? "Embark on hikes through glacial lakes, primeval forests, and ancient tower lookouts. Check in locally to unlock beautiful digital stamps!"
-                    : "Vydejte se k ledovcovým jezerům, pralesům a historickým rozhlednám. Osobním check-inem získáte jedinečná digitální razítka!"}
+                  {txt(
+                    "Embark on hikes through glacial lakes, primeval forests, and ancient tower lookouts. Check in locally to unlock beautiful digital stamps!",
+                    "Wanderungen zu Gletscherseen, Urwäldern und historischen Aussichtstürmen. Vor Ort einchecken und digitale Stempel freischalten!",
+                    "Vydejte se k ledovcovým jezerům, pralesům a historickým rozhlednám. Osobním check-inem získáte jedinečná digitální razítka!"
+                  )}
                 </p>
 
                 {/* Search / Filter Box */}
@@ -976,7 +1006,7 @@ export default function App() {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder={
-                        language === "en" ? "Search Black Lake, White Tower..." : "Hledat Černé jezero, Bílou věž..."
+                        txt("Search Black Lake, White Tower...", "Schwarzer See, Weißer Turm suchen...", "Hledat Černé jezero, Bílou věž...")
                       }
                       className="w-full bg-transparent outline-none pl-11 pr-4 py-2.5 text-sm text-slate-700"
                     />
@@ -986,7 +1016,7 @@ export default function App() {
                     className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-5 py-3 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer"
                   >
                     <Compass className="w-4 h-4" />
-                    <span>{language === "en" ? "Search Map" : "Hledat na mapě"}</span>
+                    <span>{txt("Search Map", "Karte durchsuchen", "Hledat na mapě")}</span>
                   </button>
                 </div>
               </div>
@@ -996,7 +1026,7 @@ export default function App() {
             <div className="space-y-4">
               <div className="flex justify-between items-end">
                 <h2 className="text-xl font-display font-bold tracking-tight text-slate-900 uppercase">
-                  {language === "en" ? "Popular Categories" : "Oblíbené Kategorie"}
+                  {txt("Popular Categories", "Beliebte Kategorien", "Oblíbené Kategorie")}
                 </h2>
                 {selectedCategory !== "All" && (
                   <button
@@ -1028,21 +1058,25 @@ export default function App() {
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-display font-bold tracking-tight text-slate-900 uppercase">
-                  {language === "en" ? "Featured Destinations" : "Doporučené Cíle"}
+                  {txt("Featured Destinations", "Empfohlene Ziele", "Doporučené Cíle")}
                 </h2>
                 <span className="text-xs text-slate-400">
-                  {language === "en"
-                    ? `Showing ${filteredPois.length} locations`
-                    : `Zobrazeno ${filteredPois.length} lokalit`}
+                  {txt(
+                    `Showing ${filteredPois.length} locations`,
+                    `${filteredPois.length} Orte angezeigt`,
+                    `Zobrazeno ${filteredPois.length} lokalit`
+                  )}
                 </span>
               </div>
 
               {filteredPois.length === 0 ? (
                 <div className="bg-white border border-slate-200 p-12 text-center rounded-2xl shadow-sm">
                   <p className="text-slate-400 text-sm">
-                    {language === "en"
-                      ? "No matching locations found. Try clearing your search filters."
-                      : "Nebyly nalezeny žádné cíle. Zkuste změnit vyhledávací kritéria."}
+                    {txt(
+                      "No matching locations found. Try clearing your search filters.",
+                      "Keine passenden Orte gefunden. Filter zurücksetzen.",
+                      "Nebyly nalezeny žádné cíle. Zkuste změnit vyhledávací kritéria."
+                    )}
                   </p>
                 </div>
               ) : (
@@ -1081,10 +1115,10 @@ export default function App() {
                       <div className="p-5 flex-1 flex flex-col justify-between">
                         <div>
                           <h3 className="text-base font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">
-                            {language === "en" ? poi.name : poi.czName}
+                            {getPoiName(poi, language)}
                           </h3>
                           <p className="text-xs text-slate-400 mt-1.5 line-clamp-2 leading-relaxed">
-                            {language === "en" ? poi.description : poi.czDescription}
+                            {getPoiDescription(poi, language)}
                           </p>
                         </div>
 
@@ -1121,12 +1155,14 @@ export default function App() {
               <div className="absolute -right-16 -bottom-16 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
               <div className="space-y-4 max-w-xl">
                 <h3 className="text-xl md:text-2xl font-display font-extrabold tracking-tight text-emerald-600">
-                  {language === "en" ? "ADVENTURE IN YOUR POCKET" : "DOBRODRUŽSTVÍ VE VAŠÍ KAPSE"}
+                  {txt("ADVENTURE IN YOUR POCKET", "ABENTEUER IN DER TASCHE", "DOBRODRUŽSTVÍ VE VAŠÍ KAPSE")}
                 </h3>
                 <p className="text-sm text-slate-600 leading-relaxed">
-                  {language === "en"
-                    ? "Get coordinates, sync with BayernCloud servers, and fill your digital stamp book offline while exploring. Perfect for multi-day hiking expeditions!"
-                    : "Získejte souřadnice, synchronizujte se servery BayernCloud a sbírejte digitální razítka offline. Ideální pro vícedenní výpravy!"}
+                  {txt(
+                    "Get coordinates, sync with BayernCloud servers, and fill your digital stamp book offline while exploring. Perfect for multi-day hiking expeditions!",
+                    "Koordinaten abrufen, mit BayernCloud synchronisieren und offline Stempel sammeln – ideal für mehrtägige Touren!",
+                    "Získejte souřadnice, synchronizujte se servery BayernCloud a sbírejte digitální razítka offline. Ideální pro vícedenní výpravy!"
+                  )}
                 </p>
                 <div className="flex gap-4 pt-2">
                   <div className="flex flex-col">
@@ -1144,7 +1180,7 @@ export default function App() {
                 onClick={handleGoStamps}
                 className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl shadow-lg transition-all cursor-pointer whitespace-nowrap self-start md:self-center"
               >
-                {language === "en" ? "My Stamp Collection" : "Moje sbírka razítek"}
+                {txt("My Stamp Collection", "Meine Stempelsammlung", "Moje sbírka razítek")}
               </button>
             </div>
           </div>
@@ -1156,12 +1192,14 @@ export default function App() {
             {/* Header Title */}
             <div>
               <h1 className="text-xl sm:text-2xl font-display font-extrabold text-slate-900 tracking-tight uppercase">
-                {language === "en" ? "Cross-Border Explorer Map" : "Přeshraniční interaktivní mapa"}
+                {txt("Cross-Border Explorer Map", "Grenzüberschreitende Entdecker-Karte", "Přeshraniční interaktivní mapa")}
               </h1>
               <p className="text-xs text-slate-400 mt-1">
-                {language === "en"
-                  ? "Explore geolocated hiking trails and click pins on the map to access cross-border guidebooks."
-                  : "Objevujte přeshraniční stezky a klikněte na špendlíky na mapě pro přístup k průvodci."}
+                {txt(
+                  "Explore geolocated hiking trails and click pins on the map to access cross-border guidebooks.",
+                  "Erkunden Sie Wanderwege auf der Karte und öffnen Sie grenzüberschreitende Reiseführer per Klick.",
+                  "Objevujte přeshraniční stezky a klikněte na špendlíky na mapě pro přístup k průvodci."
+                )}
               </p>
             </div>
 
@@ -1176,7 +1214,7 @@ export default function App() {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={language === "en" ? "Search locations..." : "Hledat lokalitu..."}
+                    placeholder={txt("Search locations...", "Orte suchen...", "Hledat lokalitu...")}
                     className="w-full bg-slate-50 border border-slate-200 focus:border-emerald-500 text-xs rounded-xl pl-9 pr-4 py-2.5 outline-none text-slate-700"
                   />
                 </div>
@@ -1219,7 +1257,7 @@ export default function App() {
                         />
                         <div className="flex-1 min-w-0">
                           <h4 className="text-xs font-bold text-slate-900 truncate">
-                            {language === "en" ? poi.name : poi.czName}
+                            {getPoiName(poi, language)}
                           </h4>
                           <span className="text-[9px] text-slate-400 block mt-0.5">
                             {poi.category} • {poi.difficulty}
@@ -1253,15 +1291,17 @@ export default function App() {
         {currentView === "details" && !activePoi && (
           <div className="bg-white border border-slate-200 p-8 sm:p-12 text-center rounded-2xl shadow-sm space-y-4">
             <p className="text-slate-400 text-sm">
-              {language === "en"
-                ? "This location could not be found."
-                : "Tato lokalita nebyla nalezena."}
+              {txt(
+                "This location could not be found.",
+                "Dieser Ort wurde nicht gefunden.",
+                "Tato lokalita nebyla nalezena."
+              )}
             </p>
             <button
               onClick={goHome}
               className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl"
             >
-              {language === "en" ? "Back to Home" : "Zpět na úvod"}
+              {txt("Back to Home", "Zur Startseite", "Zpět na úvod")}
             </button>
           </div>
         )}
@@ -1298,6 +1338,14 @@ export default function App() {
             "Secret Tips": "Hidden Gem",
           }[activePoi.category] || "Destination";
 
+          const categoryDeLabel = {
+            Lakes: "Naturwunder",
+            Waterfalls: "Malerischer Wasserfall",
+            Hiking: "Alpiner Wanderweg",
+            Museums: "Kulturerbe",
+            "Secret Tips": "Geheimtipp",
+          }[activePoi.category] || "Ziel";
+
           const categoryCzLabel = {
             Lakes: "Přírodní Div",
             Waterfalls: "Scénická kaskáda",
@@ -1317,94 +1365,113 @@ export default function App() {
           };
 
           return (
-            <div className="space-y-10 animate-fade-in">
-              {/* Hero — full-bleed like home page */}
-              <div className="relative h-[min(320px,45vh)] sm:h-[380px] md:h-[460px] overflow-hidden rounded-3xl shadow-lg">
-                <img
-                  src={activeGalleryImage || activePoi.image}
-                  alt={activePoi.name}
-                  className="absolute inset-0 h-full w-full object-cover brightness-75 transition-all duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0b0f19] via-black/20 to-transparent" />
+            <div className="space-y-6 sm:space-y-10 animate-fade-in">
+              {/* Hero + gallery (gallery sits below image so text never overlaps thumbnails) */}
+              <div className="space-y-3 sm:space-y-4">
+                <div className="relative h-[min(300px,50vh)] sm:h-[400px] md:h-[460px] overflow-hidden rounded-2xl sm:rounded-3xl shadow-lg">
+                  <img
+                    src={activeGalleryImage || activePoi.image}
+                    alt={activePoi.name}
+                    className="absolute inset-0 h-full w-full object-cover brightness-75 transition-all duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0b0f19] via-black/40 to-black/10" />
 
-                {/* Weather */}
-                <div className="absolute top-4 right-4 sm:top-6 sm:right-6 flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-2.5 backdrop-blur-md">
-                  {activePoi.category === "Lakes" || activePoi.category === "Waterfalls" ? (
-                    <CloudRain className="h-5 w-5 text-emerald-600" />
-                  ) : (
-                    <Sun className="h-5 w-5 text-amber-400" />
-                  )}
-                  <div>
-                    <span className="block text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                      {language === "en" ? "Weather" : "Počasí"}
-                    </span>
-                    <span className="text-sm font-bold text-white">
-                      {activePoi.category === "Lakes" || activePoi.category === "Waterfalls"
-                        ? "14°C, Rainy"
-                        : "18°C, Clear"}
-                    </span>
+                  <div className="relative z-10 grid h-full grid-rows-[auto_1fr_auto] p-4 sm:p-6">
+                    {/* Weather */}
+                    <div className="flex justify-end">
+                      <div className="flex items-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl border border-white/20 bg-black/35 px-3 py-2 sm:px-4 sm:py-2.5 backdrop-blur-md">
+                        {activePoi.category === "Lakes" || activePoi.category === "Waterfalls" ? (
+                          <CloudRain className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-400 shrink-0" />
+                        ) : (
+                          <Sun className="h-4 w-4 sm:h-5 sm:w-5 text-amber-300 shrink-0" />
+                        )}
+                        <div className="min-w-0">
+                          <span className="block text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-white/70">
+                            {txt("Weather", "Wetter", "Počasí")}
+                          </span>
+                          <span className="text-xs sm:text-sm font-bold text-white whitespace-nowrap">
+                            {activePoi.category === "Lakes" || activePoi.category === "Waterfalls"
+                              ? "14°C, Rainy"
+                              : "18°C, Clear"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div aria-hidden="true" />
+
+                    {/* Tags + title only — gallery is outside this box */}
+                    <div className="shrink-0 space-y-2.5 sm:space-y-3 rounded-xl bg-gradient-to-t from-black/85 via-black/55 to-transparent pt-6 pb-1 -mx-1 px-1 sm:mx-0 sm:px-0 sm:pt-8 sm:bg-none">
+                      <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                        <span className="rounded-full border border-indigo-400/40 bg-indigo-950/70 px-2.5 py-0.5 sm:px-3 sm:py-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-indigo-200">
+                          {txt(categoryLabel, categoryDeLabel, categoryCzLabel)}
+                        </span>
+                        <span className="rounded-full border border-emerald-400/40 bg-emerald-950/50 px-2.5 py-0.5 sm:px-3 sm:py-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-emerald-200">
+                          {activePoi.category === "Museums" || activePoi.id.includes("klatovy")
+                            ? "#Bohemian"
+                            : "#Šumava"}
+                        </span>
+                      </div>
+
+                      <div className="min-w-0">
+                        <h1 className="font-display text-lg sm:text-2xl md:text-4xl font-extrabold tracking-tight text-white leading-snug line-clamp-2 sm:line-clamp-none">
+                          {getPoiName(activePoi, language)}
+                        </h1>
+                        <p className="mt-0.5 text-xs sm:text-base font-medium text-white/75 leading-snug line-clamp-1 sm:line-clamp-none">
+                          {getPoiSecondaryName(activePoi, language)}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Gallery thumbnails */}
-                <div className="absolute bottom-6 left-6 flex gap-2 rounded-2xl border border-slate-200/60 bg-slate-50/70 p-2 backdrop-blur-md">
+                <div className="flex gap-2 overflow-x-auto pb-1 px-0.5">
                   {galleryImages.map((imgUrl, i) => {
                     const isActive = (activeGalleryImage || activePoi.image) === imgUrl;
                     return (
                       <button
                         key={i}
+                        type="button"
                         onClick={() => setActiveGalleryImage(imgUrl)}
-                        className={`h-14 w-14 overflow-hidden rounded-xl border-2 transition-all sm:h-16 sm:w-16 ${
+                        className={`h-14 w-14 sm:h-16 sm:w-16 md:h-[4.5rem] md:w-[4.5rem] shrink-0 overflow-hidden rounded-xl border-2 transition-all shadow-sm ${
                           isActive
-                            ? "border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]"
-                            : "border-slate-700 hover:border-slate-500"
+                            ? "border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.35)]"
+                            : "border-slate-200 hover:border-emerald-300"
                         }`}
                       >
-                        <img src={imgUrl} className="h-full w-full object-cover" alt="" referrerPolicy="no-referrer" />
+                        <img
+                          src={imgUrl}
+                          className="h-full w-full object-cover"
+                          alt=""
+                          referrerPolicy="no-referrer"
+                        />
                       </button>
                     );
                   })}
                 </div>
-
-                {/* Title overlay on hero */}
-                <div className="absolute bottom-6 right-6 left-44 sm:left-52 md:left-auto md:max-w-lg md:text-right">
-                  <div className="mb-2 flex flex-wrap gap-2 md:justify-end">
-                    <span className="rounded-full border border-indigo-800/40 bg-indigo-950/60 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-indigo-300">
-                      {language === "en" ? categoryLabel : categoryCzLabel}
-                    </span>
-                    <span className="rounded-full border border-emerald-800/40 bg-emerald-50/60 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300">
-                      {activePoi.category === "Museums" || activePoi.id.includes("klatovy")
-                        ? "#Bohemian"
-                        : "#Šumava"}
-                    </span>
-                  </div>
-                  <h1 className="text-2xl font-display font-extrabold tracking-tight text-white md:text-4xl">
-                    {activePoi.name} / {activePoi.czName}
-                  </h1>
-                </div>
               </div>
 
               {/* Main content */}
-              <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
-                <div className="space-y-8 lg:col-span-8">
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-400">
+              <div className="grid grid-cols-1 items-start gap-6 sm:gap-8 lg:grid-cols-12">
+                <div className="space-y-6 sm:space-y-8 lg:col-span-8">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2 text-sm text-slate-500">
                     <span className="flex items-center gap-1.5">
-                      <MapPin className="h-4 w-4 text-emerald-500" />
+                      <MapPin className="h-4 w-4 shrink-0 text-emerald-500" />
                       {activePoi.category === "Museums" || activePoi.id.includes("klatovy")
                         ? "Klatovy Region, Czech Republic"
                         : "Šumava National Park, Czech Republic"}
                     </span>
-                    <span className="font-mono text-xs text-indigo-400">
+                    <span className="font-mono text-xs text-slate-400">
                       {activePoi.lat.toFixed(4)}° N, {activePoi.lng.toFixed(4)}° E
                     </span>
                   </div>
 
                   <div className="space-y-3">
                     <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">
-                      {language === "en" ? "About the Destination" : "O této destinaci"}
+                      {txt("About the Destination", "Über das Ziel", "O této destinaci")}
                     </h2>
                     <p className="text-sm leading-relaxed text-slate-600">
-                      {language === "en" ? activePoi.description : activePoi.czDescription}
+                      {getPoiDescription(activePoi, language)}
                     </p>
                   </div>
 
@@ -1416,13 +1483,15 @@ export default function App() {
                             <Clock className="w-4 h-4 text-emerald-600" />
                           </div>
                           <span className="text-xs font-black uppercase tracking-wider text-slate-700">
-                            {language === "en" ? "Opening Hours" : "Otevírací doba"}
+                            {txt("Opening Hours", "Öffnungszeiten", "Otevírací doba")}
                           </span>
                         </div>
                         <p className="text-xs text-slate-400 leading-normal">
-                          {language === "en"
-                            ? "Accessible year-round. Best visited at sunrise."
-                            : "Přístupné celoročně. Nejlepší návštěva při východu slunce."}
+                          {txt(
+                            "Accessible year-round. Best visited at sunrise.",
+                            "Ganzjährig zugänglich. Am schönsten bei Sonnenaufgang.",
+                            "Přístupné celoročně. Nejlepší návštěva při východu slunce."
+                          )}
                         </p>
                       </div>
 
@@ -1432,16 +1501,16 @@ export default function App() {
                             <Footprints className="w-4 h-4 text-emerald-600" />
                           </div>
                           <span className="text-xs font-black uppercase tracking-wider text-slate-700">
-                            {language === "en" ? "Difficulty" : "Náročnost cesty"}
+                            {txt("Difficulty", "Schwierigkeit", "Náročnost cesty")}
                           </span>
                         </div>
                         <p className="text-xs text-slate-400 leading-normal">
                           {activePoi.difficulty === "Easy" ? (
-                            language === "en" ? "Easy Trail. Paved & forest paths." : "Lehká trasa. Zpevněné a lesní cesty."
+                            txt("Easy Trail. Paved & forest paths.", "Leichte Route. Feste und Waldwege.", "Lehká trasa. Zpevněné a lesní cesty.")
                           ) : activePoi.difficulty === "Moderate" ? (
-                            language === "en" ? "Moderate Trail. Some steep slopes." : "Střední trasa. Místy strmější stoupání."
+                            txt("Moderate Trail. Some steep slopes.", "Mittlere Route. Teils steilere Anstiege.", "Střední trasa. Místy strmější stoupání.")
                           ) : (
-                            language === "en" ? "Challenging Climb. Rugged wilderness." : "Náročný výstup. Drsný terén divočiny."
+                            txt("Challenging Climb. Rugged wilderness.", "Anspruchsvoller Aufstieg. Wildes Gelände.", "Náročný výstup. Drsný terén divočiny.")
                           )}
                         </p>
                       </div>
@@ -1452,14 +1521,14 @@ export default function App() {
                             <MapPin className="w-4 h-4 text-emerald-600" />
                           </div>
                           <span className="text-xs font-black uppercase tracking-wider text-slate-700">
-                            {language === "en" ? "Facilities" : "Vybavení okolí"}
+                            {txt("Facilities", "Ausstattung", "Vybavení okolí")}
                           </span>
                         </div>
                         <p className="text-xs text-slate-400 leading-normal">
                           {activePoi.category === "Museums" ? (
-                            language === "en" ? "In-town amenities. Restrooms inside." : "Městské zázemí. Toalety uvnitř."
+                            txt("In-town amenities. Restrooms inside.", "Stadtzentrum. Toiletten innen.", "Městské zázemí. Toalety uvnitř.")
                           ) : (
-                            language === "en" ? "Parking nearby. Restrooms at trailhead." : "Parkování poblíž. Toalety na začátku stezky."
+                            txt("Parking nearby. Restrooms at trailhead.", "Parkplatz in der Nähe. Toiletten am Wanderstart.", "Parkování poblíž. Toalety na začátku stezky.")
                           )}
                         </p>
                       </div>
@@ -1469,19 +1538,21 @@ export default function App() {
                     <div className="flex flex-col items-center justify-between gap-6 rounded-2xl border border-emerald-200 bg-emerald-50/20 p-5 sm:flex-row">
                       <div className="space-y-1.5 flex-1 text-center sm:text-left">
                         <h3 className="text-xs font-black text-emerald-600 uppercase tracking-widest">
-                          {language === "en" ? "Digital Explorer Stamp" : "Digitální razítko objevitele"}
+                          {txt("Digital Explorer Stamp", "Digitaler Entdecker-Stempel", "Digitální razítko objevitele")}
                         </h3>
                         <p className="text-xs text-slate-600 leading-relaxed">
-                          {language === "en"
-                            ? `Earn your '${activePoi.stampName}' by scanning the QR code at the physical information board near the site.`
-                            : `Získejte své razítko '${activePoi.stampName}' naskenováním QR kódu na informační tabuli přímo u cíle.`}
+                          {txt(
+                            `Earn your '${activePoi.stampName}' by scanning the QR code at the physical information board near the site.`,
+                            `Sammeln Sie '${activePoi.stampName}' durch Scannen des QR-Codes an der Informationstafel vor Ort.`,
+                            `Získejte své razítko '${activePoi.stampName}' naskenováním QR kódu na informační tabuli přímo u cíle.`
+                          )}
                         </p>
                         <button
                           onClick={() => setIsScannerOpen(true)}
                           className="mt-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs uppercase tracking-wider px-5 py-2.5 rounded-xl transition-all cursor-pointer inline-flex items-center gap-2 shadow-sm"
                         >
                           <Compass className="w-4 h-4 text-white" />
-                          <span>{language === "en" ? "Open Scanner" : "Otevřít Skener"}</span>
+                          <span>{txt("Open Scanner", "Scanner öffnen", "Otevřít Skener")}</span>
                         </button>
                       </div>
 
@@ -1504,23 +1575,18 @@ export default function App() {
                     <button
                       type="button"
                       onClick={() => goMap(activePoi.id)}
-                      className="relative h-36 w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-50"
+                      className="group relative h-36 w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-100 cursor-pointer"
                     >
-                        {/* Styled topographic concentric loops & grids */}
-                        <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1.5px,transparent_1.5px)] [background-size:16px_16px] opacity-75" />
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-full border border-slate-200/50" />
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full border border-slate-200/50" />
-
-                        {/* Centered blinking destination marker pin */}
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
-                          <div className="w-4 h-4 bg-emerald-500 rounded-full animate-ping absolute" />
-                          <MapPin className="w-7 h-7 text-emerald-600 drop-shadow-md relative z-10" />
-                        </div>
-
-                        <div className="absolute bottom-2 right-2 rounded bg-white/90 px-2 py-0.5 text-[8px] font-bold uppercase tracking-widest text-slate-700">
-                          {language === "en" ? "View Full Map" : "Zobrazit mapu"}
-                        </div>
-                      </button>
+                      <PoiPreviewMap
+                        lat={activePoi.lat}
+                        lng={activePoi.lng}
+                        className="pointer-events-none transition-transform duration-300 group-hover:scale-[1.02]"
+                      />
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
+                      <div className="pointer-events-none absolute bottom-2 right-2 rounded bg-white/95 px-2 py-0.5 text-[8px] font-bold uppercase tracking-widest text-slate-700 shadow-sm">
+                        {txt("View Full Map", "Vollständige Karte", "Zobrazit mapu")}
+                      </div>
+                    </button>
 
                       {/* Main action buttons */}
                       <div className="space-y-2.5">
@@ -1529,7 +1595,7 @@ export default function App() {
                           className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs uppercase tracking-wider py-3.5 px-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
                         >
                           <Award className="w-4 h-4 text-white" />
-                          <span>{language === "en" ? "Collect Digital Stamp" : "Získat digitální razítko"}</span>
+                          <span>{txt("Collect Digital Stamp", "Digitalen Stempel sammeln", "Získat digitální razítko")}</span>
                         </button>
 
                         <div className="grid grid-cols-2 gap-2.5">
@@ -1545,7 +1611,7 @@ export default function App() {
                             className="bg-white hover:bg-slate-100 text-slate-600 font-bold text-xs uppercase tracking-wider py-3 px-3 rounded-xl border border-slate-200 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                           >
                             <Compass className="w-3.5 h-3.5 text-slate-500" />
-                            <span>{language === "en" ? "Navigate" : "Navigovat"}</span>
+                            <span>{txt("Navigate", "Navigation", "Navigovat")}</span>
                           </button>
 
                           <button
@@ -1557,7 +1623,7 @@ export default function App() {
                             }`}
                           >
                             <Bookmark className={`w-3.5 h-3.5 ${isSaved ? "fill-emerald-600 text-emerald-600" : "text-slate-500"}`} />
-                            <span>{isSaved ? (language === "en" ? "Saved" : "Uloženo") : (language === "en" ? "Save" : "Uložit")}</span>
+                            <span>{isSaved ? txt("Saved", "Gespeichert", "Uloženo") : txt("Save", "Speichern", "Uložit")}</span>
                           </button>
                         </div>
                       </div>
@@ -1566,19 +1632,19 @@ export default function App() {
                     {/* Trek details */}
                     <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5">
                       <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest border-b border-slate-200 pb-2">
-                        {language === "en" ? "Trek Details" : "Podrobnosti výstupu"}
+                        {txt("Trek Details", "Tourendetails", "Podrobnosti výstupu")}
                       </h3>
                       <div className="space-y-2.5 text-xs text-slate-600">
                         <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-                          <span className="font-medium text-slate-400">{language === "en" ? "Elevation Gain" : "Převýšení"}</span>
+                          <span className="font-medium text-slate-400">{txt("Elevation Gain", "Höhenmeter", "Převýšení")}</span>
                           <span className="font-mono font-bold text-slate-900">{activePoi.elevationGain}</span>
                         </div>
                         <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-                          <span className="font-medium text-slate-400">{language === "en" ? "Est. Time" : "Odhadovaný čas"}</span>
+                          <span className="font-medium text-slate-400">{txt("Est. Time", "Geschätzte Zeit", "Odhadovaný čas")}</span>
                           <span className="font-mono font-bold text-slate-900">{activePoi.estTime}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="font-medium text-slate-400">{language === "en" ? "Distance" : "Délka trasy"}</span>
+                          <span className="font-medium text-slate-400">{txt("Distance", "Strecke", "Délka trasy")}</span>
                           <span className="font-mono font-bold text-slate-900">{activePoi.distance}</span>
                         </div>
                       </div>
@@ -1587,16 +1653,16 @@ export default function App() {
               </div>
 
               {/* Nearby destinations */}
-              <div className="space-y-4 border-t border-slate-200/60 pt-8">
-                  <div className="flex justify-between items-center">
+              <div className="space-y-4 border-t border-slate-200/60 pt-6 sm:pt-8">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <h3 className="text-sm font-black text-slate-700 uppercase tracking-widest">
-                      {language === "en" ? "Discover More Nearby" : "Objevte další cíle v okolí"}
+                      {txt("Discover More Nearby", "Mehr in der Nähe entdecken", "Objevte další cíle v okolí")}
                     </h3>
                     <button
                       onClick={() => goMap()}
                       className="text-xs font-extrabold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 transition-all cursor-pointer"
                     >
-                      <span>{language === "en" ? "See all attractions" : "Zobrazit všechny cíle"}</span>
+                      <span>{txt("See all attractions", "Alle Ziele anzeigen", "Zobrazit všechny cíle")}</span>
                       <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -1625,7 +1691,7 @@ export default function App() {
                             <div className="min-w-0 flex flex-col justify-between py-0.5">
                               <div>
                                 <h4 className="text-xs font-black text-slate-900 group-hover:text-emerald-600 transition-colors truncate">
-                                  {language === "en" ? poi.name : poi.czName}
+                                  {getPoiName(poi, language)}
                                 </h4>
                                 <span className="text-[10px] text-slate-500 font-extrabold block mt-0.5 uppercase tracking-wider leading-none">
                                   {poi.category}
@@ -1648,15 +1714,17 @@ export default function App() {
         {currentView === "navigate" && !activePoi && (
           <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-8 sm:p-12 text-center shadow-sm">
             <p className="text-sm text-slate-400">
-              {language === "en"
-                ? "This navigation destination could not be found."
-                : "Tento navigační cíl nebyl nalezen."}
+              {txt(
+                "This navigation destination could not be found.",
+                "Dieses Navigationsziel wurde nicht gefunden.",
+                "Tento navigační cíl nebyl nalezen."
+              )}
             </p>
             <button
               onClick={goHome}
               className="rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-emerald-500"
             >
-              {language === "en" ? "Back to Home" : "Zpět na úvod"}
+              {txt("Back to Home", "Zur Startseite", "Zpět na úvod")}
             </button>
           </div>
         )}
@@ -1699,7 +1767,7 @@ export default function App() {
                   {/* Total Stamps */}
                   <div className="space-y-1">
                     <div className="flex justify-between text-[11px] font-mono text-slate-400">
-                      <span>{language === "en" ? "Stamps Collected" : "Získaná razítka"}</span>
+                      <span>{txt("Stamps Collected", "Gesammelte Stempel", "Získaná razítka")}</span>
                       <span className="text-emerald-600 font-bold">{unlockedStampsCount}/{totalStampsCount}</span>
                     </div>
                     <div className="w-full bg-slate-50 rounded-full h-2 overflow-hidden border border-slate-200">
@@ -1713,7 +1781,7 @@ export default function App() {
                   {/* Secret Tips */}
                   <div className="space-y-1">
                     <div className="flex justify-between text-[11px] font-mono text-slate-400">
-                      <span>{language === "en" ? "Secret Tips" : "Tajné tipy"}</span>
+                      <span>{txt("Secret Tips", "Geheimtipps", "Tajné tipy")}</span>
                       <span className="text-emerald-600 font-bold">{unlockedSecretTipsCount}/{totalSecretTipsCount}</span>
                     </div>
                     <div className="w-full bg-slate-50 rounded-full h-2 overflow-hidden border border-slate-200">
@@ -1732,7 +1800,7 @@ export default function App() {
                   onClick={handleCollectNearestStamp}
                   className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl shadow-lg transition-all cursor-pointer text-center whitespace-nowrap"
                 >
-                  {language === "en" ? "Collect Nearest Stamp" : "Získat nejbližší razítko"}
+                  {txt("Collect Nearest Stamp", "Nächsten Stempel sammeln", "Získat nejbližší razítko")}
                 </button>
 
                 <button
@@ -1740,7 +1808,7 @@ export default function App() {
                   className="flex-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 hover:border-rose-300 text-rose-700 font-bold text-xs uppercase tracking-wider px-5 py-3.5 rounded-xl shadow-sm transition-all cursor-pointer text-center whitespace-nowrap flex items-center justify-center gap-1.5"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  <span>{language === "en" ? "Reset Stamp Pass" : "Resetovat razítka"}</span>
+                  <span>{txt("Reset Stamp Pass", "Stempelpass zurücksetzen", "Resetovat razítka")}</span>
                 </button>
               </div>
             </div>
@@ -1895,7 +1963,7 @@ export default function App() {
                 className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-[11px] flex-1 outline-none focus:border-emerald-500 text-slate-800"
               />
               <button
-                onClick={() => alert(language === "en" ? "Thank you for subscribing!" : "Děkujeme za přihlášení!")}
+                onClick={() => alert(txt("Thank you for subscribing!", "Danke für Ihre Anmeldung!", "Děkujeme za přihlášení!"))}
                 className="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer shadow-sm"
               >
                 Join
@@ -1916,7 +1984,7 @@ export default function App() {
       <QRScannerModal
         isOpen={isScannerOpen}
         onClose={() => setIsScannerOpen(false)}
-        poiName={activePoi ? (language === "en" ? activePoi.name : activePoi.czName) : ""}
+        poiName={activePoi ? getPoiName(activePoi, language) : ""}
         language={language}
         isLoggedIn={!!loggedInUser}
         onStampScanned={handleStampScanned}
@@ -1942,12 +2010,14 @@ export default function App() {
       <StampCelebration
         active={showStampCelebration}
         celebrationKey={celebrationKey}
-        message={celebrationMeta?.message ?? (language === "en" ? "Stamp Collected!" : "Razítko získáno!")}
+        message={celebrationMeta?.message ?? (txt("Stamp Collected!", "Stempel gesammelt!", "Razítko získáno!"))}
         subMessage={
           celebrationMeta?.subMessage ??
-          (language === "en"
-            ? "Another adventure logged on your explorer pass."
-            : "Další dobrodružství zapsáno do vašeho pasu.")
+          txt(
+            "Another adventure logged on your explorer pass.",
+            "Ein weiteres Abenteuer in Ihrem Entdeckerpass.",
+            "Další dobrodružství zapsáno do vašeho pasu."
+          )
         }
       />
 

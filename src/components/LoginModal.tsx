@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Compass, X } from "lucide-react";
 import { MainLogo } from "./icons";
+import { AppLanguage, tr } from "../i18n/language";
 
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
-  language: "en" | "cs";
+  language: AppLanguage;
   onLoginSuccess: (user: { name: string; email: string; role: "user" }) => void;
   onGoRegister: () => void;
 }
@@ -17,6 +18,7 @@ export default function LoginModal({
   onLoginSuccess,
   onGoRegister,
 }: LoginModalProps) {
+  const txt = (en: string, de: string, cs: string) => tr(language, en, de, cs);
   const [mode, setMode] = useState<"login" | "forgot">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,20 +49,14 @@ export default function LoginModal({
       setMode("login");
       onLoginSuccess(user);
     } else {
-      setError(
-        language === "en"
-          ? "Invalid email or password."
-          : "Nesprávný e-mail nebo heslo."
-      );
+      setError(txt("Invalid email or password.", "Ungültige E-Mail oder Passwort.", "Nesprávný e-mail nebo heslo."));
     }
   };
 
   const handleForgotSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) {
-      setError(
-        language === "en" ? "Please enter your email address." : "Zadejte svůj e-mail."
-      );
+      setError(txt("Please enter your email address.", "Bitte geben Sie Ihre E-Mail ein.", "Zadejte svůj e-mail."));
       return;
     }
     setError("");
@@ -90,21 +86,21 @@ export default function LoginModal({
             <MainLogo className="mx-auto h-8 w-8" />
             <h2 className="font-display text-xl font-bold uppercase tracking-wider text-slate-900">
               {mode === "login"
-                ? language === "en"
-                  ? "Sign In To Your Adventure"
-                  : "Přihlaste se k dobrodružství"
-                : language === "en"
-                  ? "Reset Password"
-                  : "Obnovení hesla"}
+                ? txt("Sign In To Your Adventure", "Melden Sie sich an", "Přihlaste se k dobrodružství")
+                : txt("Reset Password", "Passwort zurücksetzen", "Obnovení hesla")}
             </h2>
             <p className="text-xs font-light text-slate-400">
               {mode === "login"
-                ? language === "en"
-                  ? "Access your digital stamp pass and saved adventures."
-                  : "Získejte přístup k digitálnímu pasu razítek a uloženým výletům."
-                : language === "en"
-                  ? "Enter your email and we will send you a reset link."
-                  : "Zadejte e-mail a pošleme vám odkaz pro obnovení hesla."}
+                ? txt(
+                    "Access your digital stamp pass and saved adventures.",
+                    "Greifen Sie auf Ihren digitalen Stempelpass zu.",
+                    "Získejte přístup k digitálnímu pasu razítek a uloženým výletům."
+                  )
+                : txt(
+                    "Enter your email and we will send you a reset link.",
+                    "Geben Sie Ihre E-Mail ein – wir senden einen Reset-Link.",
+                    "Zadejte e-mail a pošleme vám odkaz pro obnovení hesla."
+                  )}
             </p>
           </div>
 
@@ -118,7 +114,7 @@ export default function LoginModal({
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               <div>
                 <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  {language === "en" ? "Email Address" : "E-mailová adresa"}
+                  {txt("Email Address", "E-Mail-Adresse", "E-mailová adresa")}
                 </label>
                 <input
                   type="email"
@@ -132,7 +128,7 @@ export default function LoginModal({
 
               <div>
                 <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  {language === "en" ? "Password" : "Heslo"}
+                  {txt("Password", "Passwort", "Heslo")}
                 </label>
                 <input
                   type="password"
@@ -153,7 +149,7 @@ export default function LoginModal({
                     className="h-3.5 w-3.5 rounded border-slate-200 bg-slate-50 text-emerald-500 focus:ring-0"
                   />
                   <span className="text-[11px] text-slate-400">
-                    {language === "en" ? "Remember my session" : "Zapamatovat přihlášení"}
+                    {txt("Remember my session", "Sitzung merken", "Zapamatovat přihlášení")}
                   </span>
                 </label>
                 <button
@@ -165,7 +161,7 @@ export default function LoginModal({
                   }}
                   className="text-[11px] text-emerald-600 hover:underline"
                 >
-                  {language === "en" ? "Forgot password?" : "Zapomenuté heslo?"}
+                  {txt("Forgot password?", "Passwort vergessen?", "Zapomenuté heslo?")}
                 </button>
               </div>
 
@@ -173,21 +169,23 @@ export default function LoginModal({
                 type="submit"
                 className="w-full cursor-pointer rounded-xl bg-emerald-600 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-emerald-600/20 transition-all hover:bg-emerald-500"
               >
-                {language === "en" ? "Login" : "Přihlásit se"}
+                {txt("Login", "Anmelden", "Přihlásit se")}
               </button>
             </form>
           ) : (
             <form onSubmit={handleForgotSubmit} className="space-y-4">
               {forgotSent ? (
                 <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center text-xs text-emerald-700">
-                  {language === "en"
-                    ? "If an account exists for that email, a password reset link has been sent."
-                    : "Pokud účet s tímto e-mailem existuje, byl odeslán odkaz pro obnovení hesla."}
+                  {txt(
+                    "If an account exists for that email, a password reset link has been sent.",
+                    "Falls ein Konto existiert, wurde ein Reset-Link gesendet.",
+                    "Pokud účet s tímto e-mailem existuje, byl odeslán odkaz pro obnovení hesla."
+                  )}
                 </div>
               ) : (
                 <div>
                   <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    {language === "en" ? "Email Address" : "E-mailová adresa"}
+                    {txt("Email Address", "E-Mail-Adresse", "E-mailová adresa")}
                   </label>
                   <input
                     type="email"
@@ -210,14 +208,14 @@ export default function LoginModal({
                   }}
                   className="flex-1 rounded-xl border border-slate-200 py-3 text-xs font-bold uppercase tracking-wider text-slate-600 hover:bg-slate-50"
                 >
-                  {language === "en" ? "Back to Sign In" : "Zpět na přihlášení"}
+                  {txt("Back to Sign In", "Zurück zur Anmeldung", "Zpět na přihlášení")}
                 </button>
                 {!forgotSent && (
                   <button
                     type="submit"
                     className="flex-1 rounded-xl bg-emerald-600 py-3 text-xs font-bold uppercase tracking-wider text-white hover:bg-emerald-500"
                   >
-                    {language === "en" ? "Send Reset Link" : "Odeslat odkaz"}
+                    {txt("Send Reset Link", "Link senden", "Odeslat odkaz")}
                   </button>
                 )}
               </div>
@@ -226,7 +224,7 @@ export default function LoginModal({
 
           {mode === "login" && (
             <p className="text-center text-[11px] text-slate-500">
-              {language === "en" ? "Don't have an account? " : "Nemáte účet? "}
+              {txt("Don't have an account? ", "Noch kein Konto? ", "Nemáte účet? ")}
               <button
                 type="button"
                 onClick={() => {
@@ -237,7 +235,7 @@ export default function LoginModal({
                 }}
                 className="font-semibold text-emerald-600 hover:underline"
               >
-                {language === "en" ? "Register" : "Registrovat se"}
+                {txt("Register", "Registrieren", "Registrovat se")}
               </button>
             </p>
           )}

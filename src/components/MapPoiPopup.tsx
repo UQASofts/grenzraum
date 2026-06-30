@@ -1,5 +1,6 @@
 import { POI } from "../types";
 import { MapPin, X, ChevronRight } from "lucide-react";
+import { AppLanguage, getPoiName, getPoiSecondaryName, tr } from "../i18n/language";
 
 function getDistanceKm(
   lat1: number,
@@ -18,17 +19,17 @@ function getDistanceKm(
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-const CATEGORY_TAG: Record<POI["category"], { en: string; cs: string }> = {
-  Lakes: { en: "Natural", cs: "Příroda" },
-  Waterfalls: { en: "Natural", cs: "Příroda" },
-  Hiking: { en: "Activity", cs: "Aktivita" },
-  Museums: { en: "Culture", cs: "Kultura" },
-  "Secret Tips": { en: "Secret", cs: "Tajné" },
+const CATEGORY_TAG: Record<POI["category"], { en: string; de: string; cs: string }> = {
+  Lakes: { en: "Natural", de: "Natur", cs: "Příroda" },
+  Waterfalls: { en: "Natural", de: "Natur", cs: "Příroda" },
+  Hiking: { en: "Activity", de: "Aktivität", cs: "Aktivita" },
+  Museums: { en: "Culture", de: "Kultur", cs: "Kultura" },
+  "Secret Tips": { en: "Secret", de: "Geheim", cs: "Tajné" },
 };
 
 interface MapPoiPopupProps {
   poi: POI;
-  language: "en" | "cs";
+  language: AppLanguage;
   userLat: number;
   userLng: number;
   onClose: () => void;
@@ -45,8 +46,9 @@ export default function MapPoiPopup({
 }: MapPoiPopupProps) {
   const distance = getDistanceKm(userLat, userLng, poi.lat, poi.lng).toFixed(1);
   const tag = CATEGORY_TAG[poi.category];
-  const title = language === "en" ? poi.name : poi.czName;
-  const subtitle = language === "en" ? poi.czName : poi.name;
+  const title = getPoiName(poi, language);
+  const subtitle = getPoiSecondaryName(poi, language);
+  const txt = (en: string, de: string, cs: string) => tr(language, en, de, cs);
 
   return (
     <div className="pointer-events-auto flex w-full max-w-md items-stretch gap-3 rounded-xl border border-slate-200 bg-white p-2.5 shadow-xl">
@@ -66,7 +68,7 @@ export default function MapPoiPopup({
             type="button"
             onClick={onClose}
             className="shrink-0 rounded-md p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-            aria-label={language === "en" ? "Close" : "Zavřít"}
+            aria-label={txt("Close", "Schließen", "Zavřít")}
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -75,11 +77,11 @@ export default function MapPoiPopup({
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-1.5 text-[10px] text-slate-500">
             <span className="shrink-0 rounded bg-emerald-50 px-1.5 py-0.5 font-semibold uppercase tracking-wide text-emerald-700">
-              {language === "en" ? tag.en : tag.cs}
+              {txt(tag.en, tag.de, tag.cs)}
             </span>
             <MapPin className="h-3 w-3 shrink-0" />
             <span className="truncate">
-              {language === "en" ? `${distance} km away` : `${distance} km`}
+              {txt(`${distance} km away`, `${distance} km entfernt`, `${distance} km`)}
             </span>
           </div>
 
@@ -88,7 +90,7 @@ export default function MapPoiPopup({
             onClick={onOpenDetails}
             className="flex shrink-0 items-center gap-0.5 rounded-lg bg-emerald-600 px-2.5 py-1.5 text-[10px] font-bold text-white transition-colors hover:bg-emerald-500"
           >
-            {language === "en" ? "Details" : "Detail"}
+            {txt("Details", "Details", "Detail")}
             <ChevronRight className="h-3 w-3" />
           </button>
         </div>
