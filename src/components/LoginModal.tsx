@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Compass, X } from "lucide-react";
 import { MainLogo } from "./icons";
 import { AppLanguage, tr } from "../i18n/language";
+import { saveHikerSession } from "../utils/hikerSession";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -41,9 +42,7 @@ export default function LoginModal({
 
     if (email === "user@example.com" && password === "password") {
       const user = { name: "User", email, role: "user" as const };
-      if (rememberMe) {
-        localStorage.setItem("hikerSession", JSON.stringify(user));
-      }
+      saveHikerSession(user);
       setEmail("");
       setPassword("");
       setMode("login");

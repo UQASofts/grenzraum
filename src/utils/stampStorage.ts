@@ -53,13 +53,25 @@ export function unlockStampForPoi(
 const PENDING_COLLECT_KEY = "pendingStampCollect";
 
 export function persistPendingCollect(poiId: string): void {
-  sessionStorage.setItem(PENDING_COLLECT_KEY, poiId);
+  localStorage.setItem(PENDING_COLLECT_KEY, poiId);
 }
 
 export function consumePendingCollect(): string | null {
-  const poiId = sessionStorage.getItem(PENDING_COLLECT_KEY);
+  let poiId = localStorage.getItem(PENDING_COLLECT_KEY);
+  if (!poiId) {
+    try {
+      poiId = sessionStorage.getItem(PENDING_COLLECT_KEY);
+    } catch {
+      /* ignore */
+    }
+  }
   if (poiId) {
-    sessionStorage.removeItem(PENDING_COLLECT_KEY);
+    localStorage.removeItem(PENDING_COLLECT_KEY);
+    try {
+      sessionStorage.removeItem(PENDING_COLLECT_KEY);
+    } catch {
+      /* ignore */
+    }
   }
   return poiId;
 }

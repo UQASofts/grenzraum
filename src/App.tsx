@@ -32,6 +32,11 @@ import {
 } from "./utils/stampStorage";
 import { playStampCelebrationSound } from "./utils/stampCelebrationSound";
 import {
+  loadHikerSession,
+  saveHikerSession,
+  clearHikerSession,
+} from "./utils/hikerSession";
+import {
   MapPin,
   Compass,
   Search,
@@ -72,14 +77,9 @@ export default function App() {
   
   // Persistent State Init: initially the stamp pass of the user will be reset (locked by default)
   const [userStamps, setUserStamps] = useState<UserStamp[]>(() => {
-    try {
-      const saved = localStorage.getItem("hikerSession");
-      if (saved) {
-        const user = JSON.parse(saved) as { email: string };
-        return loadUserStamps(user.email);
-      }
-    } catch {
-      /* ignore */
+    const user = loadHikerSession();
+    if (user) {
+      return loadUserStamps(user.email);
     }
     return defaultUserStamps();
   });
@@ -120,14 +120,7 @@ export default function App() {
     name: string;
     email: string;
     role: "user";
-  } | null>(() => {
-    try {
-      const saved = localStorage.getItem("hikerSession");
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
+  } | null>(() => loadHikerSession());
 
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
@@ -179,6 +172,33 @@ export default function App() {
   const activePoi = useMemo(() => {
     return pois.find((p) => p.id === selectedPoiId) || null;
   }, [pois, selectedPoiId]);
+
+  // Re-sync login + stamps from localStorage when switching tabs (iOS QR opens new tab)
+  useEffect(() => {
+    const syncFromStorage = () => {
+      const user = loadHikerSession();
+      if (user) {
+        setLoggedInUser(user);
+        setUserStamps(loadUserStamps(user.email));
+      }
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        syncFromStorage();
+      }
+    };
+
+    window.addEventListener("focus", syncFromStorage);
+    window.addEventListener("storage", syncFromStorage);
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      window.removeEventListener("focus", syncFromStorage);
+      window.removeEventListener("storage", syncFromStorage);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
 
   // Sync active gallery image when active POI changes
   useEffect(() => {
@@ -508,7 +528,7 @@ export default function App() {
         const source = baseStamps ?? prev;
         const result = unlockStampForPoi(source, collectPoiId);
         wasNew = result.wasNew;
-        if (userEmail && result.wasNew) {
+        if (userEmail) {
           saveUserStamps(userEmail, result.stamps);
         }
         return result.stamps;
@@ -767,6 +787,7 @@ export default function App() {
   };
 
   const handleLoginSuccess = (user: { name: string; email: string; role: "user" }) => {
+    saveHikerSession(user);
     const stamps = loadUserStamps(user.email);
     const returnPath = pendingReturnPath;
     const collectFromReturn = returnPath ? parseCollectPoiIdFromScan(returnPath) : null;
@@ -796,8 +817,9 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("hikerSession");
+    clearHikerSession();
     setLoggedInUser(null);
+    setUserStamps(defaultUserStamps());
     goHome();
   };
 
