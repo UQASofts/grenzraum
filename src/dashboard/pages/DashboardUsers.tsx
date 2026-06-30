@@ -103,7 +103,7 @@ export default function DashboardUsers() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleDelete(user.id, user.name)}
+                            // onClick={() => handleDelete(user.id, user.name)}
                             className="rounded-lg border border-rose-200 p-2 text-rose-500 hover:bg-rose-50"
                             title="Delete"
                           >

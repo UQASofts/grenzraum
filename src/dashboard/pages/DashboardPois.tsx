@@ -82,8 +82,8 @@ export default function DashboardPois() {
           <button
             type="button"
             onClick={() => {
-              setEditingPoi(null);
-              setIsCreateOpen(true);
+              // setEditingPoi(null);
+              // setIsCreateOpen(true);
             }}
             className="flex items-center justify-center gap-1.5 self-start rounded-lg bg-emerald-600 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-emerald-500 sm:self-auto"
           >
@@ -171,8 +171,8 @@ export default function DashboardPois() {
                       <button
                         type="button"
                         onClick={() => {
-                          setEditingPoi(poi);
-                          setIsCreateOpen(true);
+                          // setEditingPoi(poi);
+                          // setIsCreateOpen(true);
                         }}
                         className="rounded-lg border border-slate-200 p-2 text-slate-500 hover:bg-slate-50 hover:text-slate-700"
                         title="Edit"
@@ -181,7 +181,7 @@ export default function DashboardPois() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleDelete(poi.id)}
+                        // onClick={() => handleDelete(poi.id)}
                         className="rounded-lg border border-rose-200 p-2 text-rose-500 hover:bg-rose-50"
                         title="Delete"
                       >
